@@ -90,8 +90,8 @@ const SortableItem = ({
   };
 
   return (
-    <div ref={setNodeRef} className={cn("bg-background flex gap-x-1 rounded-lg border items-center", type === "object" ? "px-2 py-4" : "px-1 py-2", isDragging ? "z-50" : "z-10")} style={style}>
-      <Button type="button" variant="ghost" size="icon-sm" className="h-8 cursor-move" {...attributes} {...listeners}>
+    <div ref={setNodeRef} className={cn("bg-background flex gap-x-1 rounded-lg border items-start", type === "object" ? "px-2 py-4" : "px-1 py-2", isDragging ? "z-50" : "z-10")} style={style}>
+      <Button type="button" variant="ghost" size="icon-sm" className="h-4 cursor-move" {...attributes} {...listeners}>
         <GripVertical className="h-4 w-4" />
       </Button>
       {children}
@@ -195,7 +195,7 @@ const ListField = ({
                     </div>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon-sm" className="h-8" onClick={() => remove(index)}>
+                        <Button type="button" variant="ghost" size="icon-sm" className="h-4" onClick={() => remove(index)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
@@ -346,15 +346,16 @@ const EntryForm = ({
         return <ListField key={fieldName} control={form.control} field={field} fieldName={fieldName} renderFields={renderFields} />;
       } else if (field.type === "object") {
         return (
-          <fieldset key={fieldName} className={cn("grid gap-6 rounded-lg border p-4", isPoly && "bg-slate-50")}>
-            {field.label !== false &&
-              <legend className="text-sm font-medium leading-none">
-                {field.label || field.name}
-                {field.required && <span className="ml-2 rounded-md bg-muted px-2 py-0.5 text-xs font-medium">Required</span>}
-              </legend>
-            }
-            {renderFields(field.fields || [], fieldName)}
-          </fieldset>
+          <details key={fieldName} open={field.collapsed ? field.collapsed : !isPoly}>
+            <summary className="text-sm font-medium leading-none">
+              {field.label || field.name}
+              {field.required && <span className="ml-2 rounded-md bg-muted px-2 py-0.5 text-xs font-medium">Required</span>}
+            </summary>
+
+            <div className="grid gap-6 mt-6">
+              {renderFields(field.fields || [], fieldName)}
+            </div>
+          </details>
         );
       } else if (field.list && !supportsList[field.type]) {
         return <ListField key={fieldName} control={form.control} field={field} fieldName={fieldName} renderFields={renderFields} />;
