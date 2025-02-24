@@ -43,6 +43,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   DndContext, 
   closestCenter,
@@ -299,6 +300,7 @@ const EntryForm = ({
   history,
   path,
   options,
+  schema
 }: {
   title: string;
   navigateBack?: string;
@@ -308,6 +310,7 @@ const EntryForm = ({
   history?: Record<string, any>[];
   path?: string;
   options: React.ReactNode;
+  schema: any;
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -369,6 +372,41 @@ const EntryForm = ({
     }
   };
 
+  const groups = useMemo(() => {
+    const schemaGroups = schema?.groups;
+
+    if (!schemaGroups) {
+      return [];
+    }
+
+    return (schemaGroups).map(group => {
+      return {
+        name: group.name,
+        label: group.label,
+        fields: fields.filter(field => {
+          // If field.group doesn't exist in schema groups, put it in first tab
+          if (field.group && !schemaGroups.find(g => g.name === field.group) && group.name === schemaGroups[0].name) {
+            return true;
+          }
+
+          // If field has a group and it matches current group, include it
+          if (field.group && group.name) {
+            return field.group === group.name;
+          }
+          
+          // If field has no group, put it in first tab
+          if (!field.group && group.name === schemaGroups[0].name) {
+            return true;
+          }
+
+          return false;
+        })
+      };
+    });
+  }, [schema, fields]);
+
+  console.log(groups);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)}>
@@ -387,7 +425,27 @@ const EntryForm = ({
               <h1 className="font-semibold text-lg md:text-2xl truncate">{title}</h1>
             </header>
             <div onSubmit={form.handleSubmit(handleSubmit)} className="grid items-start gap-6">
-              {renderFields(fields)}
+              {
+                groups.length > 0 ?
+                  <Tabs defaultValue={groups[0].name}>
+                    <TabsList>
+                      {groups.map((group: any) => (
+                        <TabsTrigger key={group.name} value={group.name}>
+                          {group.label || group.name}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    {
+                      groups.map((group: any) => (
+                        <TabsContent key={group.name} value={group.name} className="grid gap-6">
+                          {renderFields(group.fields)}
+                        </TabsContent>
+                      ))
+                    }
+                  </Tabs>
+                  :
+                  renderFields(fields)
+              }
             </div>
           </div>
           

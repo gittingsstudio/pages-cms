@@ -383,6 +383,7 @@ export function EntryEditor({
             </Button>
           </FileOptions>
         }
+        schema={schema}
       />
   );
 };
