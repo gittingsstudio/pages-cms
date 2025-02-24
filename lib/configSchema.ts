@@ -88,6 +88,9 @@ const FieldObjectSchema: z.ZodType<any> = z.lazy(() => z.object({
   options: z.object({}).optional().nullable(),
   fields: z.array(z.lazy(() => FieldObjectSchema)).optional(),
   types: z.array(z.lazy(() => TypeObjectSchema)).optional(),
+  group: z.string({
+    message: "'group' must be a string."
+  }).optional().nullable(),
 }).strict());
 
 const TypeObjectSchema: z.ZodType<any> = z.lazy(() => z.object({
@@ -131,6 +134,14 @@ const ContentObjectSchema = z.object({
     message: "'filename' must be a string."
   }).optional().nullable(),
   filters: z.array(z.object({
+    name: z.string({
+      message: "'name' must be a string."
+    }).optional().nullable(),
+    value: z.any().optional().nullable()
+  }), {
+    message: "'filters' must be an array of objects."
+  }).optional(),
+  groups: z.array(z.object({
     name: z.string({
       message: "'name' must be a string."
     }).optional().nullable(),
