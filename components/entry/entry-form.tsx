@@ -180,6 +180,7 @@ const ListField = ({
                             return renderFields([{
                               type: 'object',
                               name: '',
+                              label: nestedConfig?.label || nestedConfig?.name,
                               fields: Object.keys(arrayField)
                                 .map((key) => {
                                   const nestedField = nestedConfig?.fields.find(f => f.name === key);
@@ -336,6 +337,7 @@ const EntryForm = ({
     return fields.map((field) => {
       if (field.hidden) return null;
 
+      const isPoly = field.name == '';
       const fieldName = parentName ? field.name ? `${parentName}.${field.name}` : parentName : field.name;
 
       if (field.types) {
@@ -344,7 +346,7 @@ const EntryForm = ({
         return <ListField key={fieldName} control={form.control} field={field} fieldName={fieldName} renderFields={renderFields} />;
       } else if (field.type === "object") {
         return (
-          <fieldset key={fieldName} className="grid gap-6 rounded-lg border p-4">
+          <fieldset key={fieldName} className={cn("grid gap-6 rounded-lg border p-4", isPoly && "bg-slate-50")}>
             {field.label !== false &&
               <legend className="text-sm font-medium leading-none">
                 {field.label || field.name}
