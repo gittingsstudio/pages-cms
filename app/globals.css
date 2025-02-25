@@ -53,6 +53,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -71,7 +72,7 @@
   background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader"%3E%3Cpath d="M12 2v4"/%3E%3Cpath d="m16.2 7.8 2.9-2.9"/%3E%3Cpath d="M18 12h4"/%3E%3Cpath d="m16.2 16.2 2.9 2.9"/%3E%3Cpath d="M12 18v4"/%3E%3Cpath d="m4.9 19.1 2.9-2.9"/%3E%3Cpath d="M2 12h4"/%3E%3Cpath d="m4.9 4.9 2.9 2.9"/%3E%3C/svg%3E');
 }
 
-.sonner-spinner > div {
+.sonner-spinner>div {
   display: none;
 }
 
@@ -81,6 +82,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

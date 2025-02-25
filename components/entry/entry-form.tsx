@@ -64,7 +64,12 @@ import {
   restrictToParentElement
 } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, ChevronLeft, GripVertical, Loader, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ChevronDown, ChevronLeft, ChevronsUpDown, GripVertical, Loader, Plus, Trash2 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 const SortableItem = ({
   id,
@@ -90,8 +95,8 @@ const SortableItem = ({
   };
 
   return (
-    <div ref={setNodeRef} className={cn("bg-background flex gap-x-1 rounded-lg border items-start", type === "object" ? "px-2 py-4" : "px-1 py-2", isDragging ? "z-50" : "z-10")} style={style}>
-      <Button type="button" variant="ghost" size="icon-sm" className="h-4 cursor-move" {...attributes} {...listeners}>
+    <div ref={setNodeRef} className={cn("bg-background flex gap-x-2 rounded-lg border items-start", type === "object" ? "px-2 py-4" : "px-1 py-2", isDragging ? "z-50" : "z-10")} style={style}>
+      <Button type="button" variant="ghost" size="sm" className="cursor-move" {...attributes} {...listeners}>
         <GripVertical className="h-4 w-4" />
       </Button>
       {children}
@@ -195,8 +200,9 @@ const ListField = ({
                     </div>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button type="button" variant="ghost" size="icon-sm" className="h-4" onClick={() => remove(index)}>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
                           <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -346,16 +352,25 @@ const EntryForm = ({
         return <ListField key={fieldName} control={form.control} field={field} fieldName={fieldName} renderFields={renderFields} />;
       } else if (field.type === "object") {
         return (
-          <details key={fieldName} open={field.collapsed ? field.collapsed : !isPoly}>
-            <summary className="text-sm font-medium leading-none">
+          <Collapsible key={fieldName}>
+            <div className="flex items-center gap-1 text-sm font-medium leading-none">
               {field.label || field.name}
               {field.required && <span className="ml-2 rounded-md bg-muted px-2 py-0.5 text-xs font-medium">Required</span>}
-            </summary>
 
-            <div className="grid gap-6 mt-6">
-              {renderFields(field.fields || [], fieldName)}
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <ChevronsUpDown className="h-4 w-4" />
+                  <span className="sr-only">Toggle</span>
+                </Button>
+              </CollapsibleTrigger>
             </div>
-          </details>
+
+            <CollapsibleContent className="grid gap-6">
+              <div className="mt-2">
+                {renderFields(field.fields || [], fieldName)}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         );
       } else if (field.list && !supportsList[field.type]) {
         return <ListField key={fieldName} control={form.control} field={field} fieldName={fieldName} renderFields={renderFields} />;
