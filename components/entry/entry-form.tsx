@@ -311,6 +311,7 @@ const CollapsibleField = ({
   children
 }: {
   label: string;
+  required: boolean;
   defaultOpen: boolean;
   children: React.ReactNode;
 }) => {
