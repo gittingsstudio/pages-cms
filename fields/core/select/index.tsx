@@ -11,14 +11,16 @@ const schema = (field: Field) => {
         ? item.value
         : item;
     });
+    if (!field.required) {
+      normalizedValues.push("");
+    }
     zodSchema = z.enum(normalizedValues as [string, ...string[]]);
   } else {
     zodSchema = z.string();
   }
 
   if (!field.required) zodSchema = zodSchema.optional();
-  
   return zodSchema;
 };
 
-export { schema, EditComponent};
+export { schema, EditComponent };

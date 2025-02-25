@@ -15,9 +15,10 @@ const EditComponent = forwardRef((props: any, ref: React.Ref<HTMLTextAreaElement
   return (
     <Select onValueChange={onChange} value={value}>
       <SelectTrigger>
-        <SelectValue />
+        <SelectValue placeholder="Select an option" />
       </SelectTrigger>
       <SelectContent>
+        {!field.required && <SelectItem value={null as unknown as string}>None</SelectItem>}
         {field.options?.values.map((option: any) => {
           let value;
           let label;
