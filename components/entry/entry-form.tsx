@@ -395,7 +395,7 @@ const EntryForm = ({
       } else if (field.type === "object") {
         if (parent?.types?.length) {
           return (
-            <CollapsibleField key={fieldName} label={field.label || field.name} required={field.required}>
+            <CollapsibleField key={fieldName} label={field.label || field.name} required={field.required ?? false} defaultOpen={!(field.collapsed ?? false)}>
               {renderFields(field.fields || [], fieldName, field)}
             </CollapsibleField>
           );
@@ -403,7 +403,7 @@ const EntryForm = ({
 
         return (
           <div key={fieldName}>
-            <CollapsibleField label={field.label || field.name} required={field.required} defaultOpen={!(field.collapsed ?? false)}>
+            <CollapsibleField label={field.label || field.name} required={field.required ?? false} defaultOpen={!(field.collapsed ?? false)}>
               <div className="grid gap-6 rounded-lg border p-4">
                 {renderFields(field.fields || [], fieldName, field)}
               </div>
