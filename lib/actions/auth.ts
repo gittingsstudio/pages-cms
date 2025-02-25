@@ -45,7 +45,7 @@ const handleEmailSignIn = async (prevState: any, formData: FormData) => {
 	const resend = new Resend(process.env.RESEND_API_KEY);
 
 	const { data, error } = await resend.emails.send({
-		from: "Pages CMS <no-reply@mail.pagescms.org>",
+		from: process.env.RESEND_SEND_FROM_ADDRESS ? `Pages CMS <${process.env.RESEND_SEND_FROM_ADDRESS}>` : "Pages CMS <no-reply@mail.pagescms.org>",
 		to: [email],
 		subject: "Sign in link for Pages CMS",
 		react: LoginEmailTemplate({
