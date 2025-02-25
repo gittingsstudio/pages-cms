@@ -30,7 +30,7 @@ const deepMap = (
                   console.warn(`Unknown type ${item.type} in polymorphic field ${field.name}`);
                   return item;
                 }
-                return traverse(item, [...typeSchema.fields, { name: 'type', type: 'hidden' } ] || []);
+                return traverse(item, [...(typeSchema.fields ?? []), { name: 'type', type: 'hidden' }]);
               } else if (field.type === "object") {
                 return traverse(item, field.fields || []);
               } else {
