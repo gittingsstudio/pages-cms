@@ -69,6 +69,9 @@ const FieldObjectSchema: z.ZodType<any> = z.lazy(() => z.object({
   required: z.boolean({
     message: "'required' must be a boolean."
   }).optional().nullable(),
+  collapsed: z.boolean({
+    message: "'collapsed' must be a boolean."
+  }).optional().nullable(),
   pattern: z.union([
     z.string({
       message: "'pattern' must be a valid regex string."

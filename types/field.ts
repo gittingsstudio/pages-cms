@@ -12,4 +12,5 @@ export type Field = {
   fields?: Field[];
   types?: { name: string; label?: string; fields: Field[] }[];
   group?: string | null;
+  collapsed?: boolean;
 };

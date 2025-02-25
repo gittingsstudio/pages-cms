@@ -64,7 +64,7 @@ import {
   restrictToParentElement
 } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowDown, ChevronDown, ChevronLeft, ChevronsUpDown, GripVertical, Loader, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ChevronDown, ChevronLeft, ChevronsUpDown, ChevronUp, GripVertical, Loader, Plus, Trash2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -113,7 +113,7 @@ const ListField = ({
   control: Control;
   field: Field;
   fieldName: string;
-  renderFields: (fields: Field[], parentName?: string) => React.ReactNode;
+  renderFields: (fields: Field[], parentName?: string, parent?: Field) => React.ReactNode;
 }) => {
   const { fields: arrayFields, append, remove, move } = useFieldArray({
     control,
@@ -176,7 +176,7 @@ const ListField = ({
                   <SortableItem key={arrayField.id} id={arrayField.id} type={field.type}>
                     <div className="grid gap-6 flex-1">
                       {field.type === "object" && field.fields
-                        ? renderFields(field.fields, `${fieldName}.${index}`)
+                        ? renderFields(field.fields, `${fieldName}.${index}`, field)
                         : field.types !== undefined ?
                           (() => {
                             const type = (arrayField as any).type;
@@ -191,8 +191,14 @@ const ListField = ({
                                   const nestedField = nestedConfig?.fields.find(f => f.name === key);
                                   return nestedField || null;
                                 })
+                                .sort((a, b) => {
+                                  if (!a || !b) return 0;
+                                  const aIndex = nestedConfig?.fields.findIndex(f => f.name === a.name);
+                                  const bIndex = nestedConfig?.fields.findIndex(f => f.name === b.name);
+                                  return (aIndex ?? 0) - (bIndex ?? 0);
+                                })
                                 .filter((field): field is Field => field !== null)
-                            }], `${fieldName}.${index}`)
+                            }], `${fieldName}.${index}`, field)
                           })()
                           :
                           renderSingleField(field, `${fieldName}.${index}`, control, false)
@@ -298,6 +304,41 @@ const renderSingleField = (
   );
 };
 
+const CollapsibleField = ({
+  label,
+  required,
+  defaultOpen,
+  children
+}: {
+  label: string;
+  defaultOpen: boolean;
+  children: React.ReactNode;
+}) => {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <Collapsible key={label} open={open} onOpenChange={setOpen} defaultOpen={defaultOpen}>
+      <div className="flex items-center gap-1 text-sm font-medium leading-none">
+        {label}
+        {required && <span className="ml-2 rounded-md bg-muted px-2 py-0.5 text-xs font-medium">Required</span>}
+
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="sm">
+            {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <span className="sr-only">Toggle</span>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+
+      <CollapsibleContent>
+        <div className="mt-2 grid gap-6">
+          {children}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
 const EntryForm = ({
   title,
   navigateBack,
@@ -339,7 +380,7 @@ const EntryForm = ({
   });
 
   // TODO: investigate why this run on every input focus
-  const renderFields = (fields: Field[], parentName?: string) => {
+  const renderFields = (fields: Field[], parentName?: string, parent?: Field) => {
     return fields.map((field) => {
       if (field.hidden) return null;
 
@@ -351,27 +392,23 @@ const EntryForm = ({
       } else if (field.type === "object" && field.list && !supportsList[field.type]) {
         return <ListField key={fieldName} control={form.control} field={field} fieldName={fieldName} renderFields={renderFields} />;
       } else if (field.type === "object") {
+        if (parent?.types?.length) {
+          return (
+            <CollapsibleField key={fieldName} label={field.label || field.name} required={field.required}>
+              {renderFields(field.fields || [], fieldName, field)}
+            </CollapsibleField>
+          );
+        }
+
         return (
-          <Collapsible key={fieldName} defaultOpen={!isPoly}>
-            <div className="flex items-center gap-1 text-sm font-medium leading-none">
-              {field.label || field.name}
-              {field.required && <span className="ml-2 rounded-md bg-muted px-2 py-0.5 text-xs font-medium">Required</span>}
-
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <ChevronsUpDown className="h-4 w-4" />
-                  <span className="sr-only">Toggle</span>
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-
-            <CollapsibleContent>
-              <div className="mt-2 grid gap-6">
-                {renderFields(field.fields || [], fieldName)}
+          <div key={fieldName}>
+            <CollapsibleField label={field.label || field.name} required={field.required} defaultOpen={!(field.collapsed ?? false)}>
+              <div className="grid gap-6 rounded-lg border p-4">
+                {renderFields(field.fields || [], fieldName, field)}
               </div>
-            </CollapsibleContent>
-          </Collapsible>
-        );
+            </CollapsibleField>
+          </div>
+        )
       } else if (field.list && !supportsList[field.type]) {
         return <ListField key={fieldName} control={form.control} field={field} fieldName={fieldName} renderFields={renderFields} />;
       }
