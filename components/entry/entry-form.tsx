@@ -352,7 +352,7 @@ const EntryForm = ({
         return <ListField key={fieldName} control={form.control} field={field} fieldName={fieldName} renderFields={renderFields} />;
       } else if (field.type === "object") {
         return (
-          <Collapsible key={fieldName}>
+          <Collapsible key={fieldName} defaultOpen={!isPoly}>
             <div className="flex items-center gap-1 text-sm font-medium leading-none">
               {field.label || field.name}
               {field.required && <span className="ml-2 rounded-md bg-muted px-2 py-0.5 text-xs font-medium">Required</span>}
@@ -365,8 +365,8 @@ const EntryForm = ({
               </CollapsibleTrigger>
             </div>
 
-            <CollapsibleContent className="grid gap-6">
-              <div className="mt-2">
+            <CollapsibleContent>
+              <div className="mt-2 grid gap-6">
                 {renderFields(field.fields || [], fieldName)}
               </div>
             </CollapsibleContent>
