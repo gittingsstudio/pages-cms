@@ -95,8 +95,8 @@ const SortableItem = ({
   };
 
   return (
-    <div ref={setNodeRef} className={cn("bg-background flex gap-x-2 rounded-lg border items-start", type === "object" ? "px-2 py-4" : "px-1 py-2", isDragging ? "z-50" : "z-10")} style={style}>
-      <Button type="button" variant="ghost" size="sm" className="cursor-move" {...attributes} {...listeners}>
+    <div ref={setNodeRef} className={cn("bg-background flex gap-x-1 rounded-lg border items-center", type === "object" ? "px-2 py-4" : "px-1 py-2", isDragging ? "z-50" : "z-10")} style={style}>
+      <Button type="button" variant="ghost" size="icon-sm" className="h-8 cursor-move" {...attributes} {...listeners}>
         <GripVertical className="h-4 w-4" />
       </Button>
       {children}
@@ -128,8 +128,9 @@ const ListField = ({
   const hasAppended = useRef(false);
 
   useEffect(() => {
-    if (arrayFields.length === 0 && !hasAppended.current) {
-      append(getDefaultValue(field));
+    const defaultEntry = getDefaultValue(field);
+    if (arrayFields.length === 0 && !hasAppended.current && defaultEntry) {
+      append(defaultEntry);
       hasAppended.current = true;
     }
   }, [arrayFields, append, field]);
@@ -176,7 +177,7 @@ const ListField = ({
                   <SortableItem key={arrayField.id} id={arrayField.id} type={field.type}>
                     <div className="grid gap-6 flex-1">
                       {field.type === "object" && field.fields
-                        ? renderFields(field.fields, `${fieldName}.${index}`, field)
+                        ? renderFields(field.fields, `${fieldName}.${index}`)
                         : field.types !== undefined ?
                           (() => {
                             const type = (arrayField as any).type;
@@ -385,7 +386,6 @@ const EntryForm = ({
     return fields.map((field) => {
       if (field.hidden) return null;
 
-      const isPoly = field.name == '';
       const fieldName = parentName ? field.name ? `${parentName}.${field.name}` : parentName : field.name;
 
       if (field.types) {
