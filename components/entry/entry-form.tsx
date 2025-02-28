@@ -197,13 +197,13 @@ const ListField = ({
                                   const nestedField = nestedConfig?.fields.find(f => f.name === key);
                                   return nestedField || null;
                                 })
+                                .filter((field): field is Field => field !== null)
                                 .sort((a, b) => {
                                   if (!a || !b) return 0;
                                   const aIndex = nestedConfig?.fields.findIndex(f => f.name === a.name);
                                   const bIndex = nestedConfig?.fields.findIndex(f => f.name === b.name);
                                   return (aIndex ?? 0) - (bIndex ?? 0);
                                 })
-                                .filter((field): field is Field => field !== null)
                             }], `${fieldName}.${index}`, field)
                           })()
                           :
