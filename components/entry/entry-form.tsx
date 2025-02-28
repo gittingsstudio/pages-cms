@@ -292,8 +292,6 @@ const renderSingleField = (
       key={fieldName}
       control={control}
       render={({ field: fieldProps }) => {
-        console.log(fieldProps);
-
         return (
           <FormItem>
             {showLabel && field.label !== false &&
