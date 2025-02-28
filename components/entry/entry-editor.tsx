@@ -173,7 +173,6 @@ export function EntryEditor({
     const savePromise = new Promise(async (resolve, reject) => {
       try {
         const savePath = path ?? `${parent ?? schema.path}/${generateFilename(schema.filename, schema, contentObject)}`;
-        contentObject = mergeDeep(entry?.contentObject, contentObject);
 
         const response = await fetch(`/api/${config.owner}/${config.repo}/${encodeURIComponent(config.branch)}/files/${encodeURIComponent(savePath)}`, {
           method: "POST",
@@ -181,6 +180,7 @@ export function EntryEditor({
           body: JSON.stringify({
             type: path === ".pages.yml" ? "settings" : "content",
             name,
+            initial: entry?.contentObject,
             content: schema?.list === true
               ? contentObject.listWrapper
               : contentObject,
