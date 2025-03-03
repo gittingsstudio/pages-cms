@@ -394,7 +394,7 @@ const EntryForm = ({
       if (field.hidden) return null;
 
       const fieldName = parentName ? field.name ? `${parentName}.${field.name}` : parentName : field.name;
-      const hasTypes = parent?.types?.length > 0;
+      const hasTypes = parent?.types?.length ?? 0 > 0;
       const defaultOpen = hasTypes ? false : field.collapsed ? !field.collapsed : true;
 
       if (field.types) {
