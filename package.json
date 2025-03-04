@@ -107,7 +107,7 @@
     "uninstall": "^0.0.0"
   },
   "optionalDependencies": {
-    "@tailwindcss/oxide-linux-arm64-gnu": "^4.0.1"
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1"
   },
   "overrides": {
     "@types/react": "19.0.10",
