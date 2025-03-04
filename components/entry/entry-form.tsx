@@ -128,14 +128,13 @@ const ListField = ({
   const hasAppended = useRef(false);
 
   useEffect(() => {
-    const defaultEntry = getDefaultValue(field);
-
-    if (typeof defaultEntry === "object" && Object.keys(defaultEntry).length === 0) {
+    const defaultValue = getDefaultValue(field);
+    if (typeof defaultValue === "object" && Object.values(defaultValue).filter(n => n).length === 0) {
       return;
     }
 
-    if (arrayFields.length === 0 && !hasAppended.current && defaultEntry) {
-      append(defaultEntry);
+    if (arrayFields.length === 0 && !hasAppended.current && defaultValue) {
+      append(defaultValue);
       hasAppended.current = true;
     }
   }, [arrayFields, append, field]);
@@ -227,48 +226,21 @@ const ListField = ({
             </DndContext>
             {typeof field.list === "object" && field.list?.max && arrayFields.length >= field.list.max
               ? null
-              : field.types !== undefined ?
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      Add an entry
-                      <ChevronDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {field.types?.map(type => (
-                      <DropdownMenuItem
-                        key={type.name}
-                        onClick={() => {
-                          const selectedType = field.types?.find(t => t.name === type.name);
-                          if (selectedType) {
-                            append({
-                              type: type.name,
-                              ...initializeState(selectedType.fields, {}, true)
-                            });
-                          }
-                        }}
-                      >
-                        {type.label || type.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                : <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    append(field.type === "object"
-                      ? initializeState(field.fields, {}, true)
-                      : getDefaultValue(field)
-                    );
-                  }}
-                  className="gap-x-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add an entry
-                </Button>
+              : <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  append(field.type === "object"
+                    ? initializeState(field.fields, {}, true)
+                    : getDefaultValue(field)
+                  );
+                }}
+                className="gap-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add an entry
+              </Button>
             }
           </div>
           <FormMessage />
@@ -291,23 +263,21 @@ const renderSingleField = (
       name={fieldName}
       key={fieldName}
       control={control}
-      render={({ field: fieldProps }) => {
-        return (
-          <FormItem>
-            {showLabel && field.label !== false &&
-              <FormLabel className="h-5">
-                {field.label || field.name}
-              </FormLabel>
-            }
-            {field.required && <span className="ml-2 rounded-md bg-muted px-2 py-0.5 text-xs font-medium">Required</span>}
-            <FormControl>
-              <FieldComponent {...fieldProps} field={field} />
-            </FormControl>
-            {field.description && <FormDescription>{field.description}</FormDescription>}
-            <FormMessage />
-          </FormItem>
-        );
-      }}
+      render={({ field: fieldProps }) => (
+        <FormItem>
+          {showLabel && field.label !== false &&
+            <FormLabel className="h-5">
+              {field.label || field.name}
+            </FormLabel>
+          }
+          {field.required && <span className="ml-2 rounded-md bg-muted px-2 py-0.5 text-xs font-medium">Required</span>}
+          <FormControl>
+            <FieldComponent {...fieldProps} field={field} />
+          </FormControl>
+          {field.description && <FormDescription>{field.description}</FormDescription>}
+          <FormMessage />
+        </FormItem>
+      )}
     />
   );
 };
@@ -393,9 +363,7 @@ const EntryForm = ({
     return fields.map((field) => {
       if (field.hidden) return null;
 
-      const fieldName = parentName ? field.name ? `${parentName}.${field.name}` : parentName : field.name;
-      const hasTypes = parent?.types?.length ?? 0 > 0;
-      const defaultOpen = hasTypes ? false : field.collapsed ? !field.collapsed : true;
+      const fieldName = parentName ? `${parentName}.${field.name}` : field.name;
 
       if (field.types) {
         return <ListField key={fieldName} control={form.control} field={field} fieldName={fieldName} renderFields={renderFields} />;
