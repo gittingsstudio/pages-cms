@@ -363,7 +363,9 @@ const EntryForm = ({
     return fields.map((field) => {
       if (field.hidden) return null;
 
-      const fieldName = parentName ? `${parentName}.${field.name}` : field.name;
+      const fieldName = parentName ? field.name ? `${parentName}.${field.name}` : parentName : field.name;
+      const hasTypes = parent?.types?.length ?? 0 > 0;
+      const defaultOpen = hasTypes ? false : field.collapsed ? !field.collapsed : true;
 
       if (field.types) {
         return <ListField key={fieldName} control={form.control} field={field} fieldName={fieldName} renderFields={renderFields} />;
