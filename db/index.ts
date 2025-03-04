@@ -1,7 +1,7 @@
 import "@/db/envConfig";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from './schema';
-import { createClient } from "@libsql/client";
+import { createClient } from "@libsql/client/web";
 
 const client = createClient({
   url: process.env.SQLITE_URL!,
