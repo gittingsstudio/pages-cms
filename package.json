@@ -105,5 +105,10 @@
     "tailwindcss": "^4.0.9",
     "typescript": "^5.8.2",
     "uninstall": "^0.0.0"
+  },
+  "optionalDependencies": {
+    "@libsql/linux-x64-gnu": "^0.14.0",
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.0.9",
+    "lightningcss-linux-x64-gnu": "^1.29.1"
   }
 }
