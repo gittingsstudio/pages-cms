@@ -98,8 +98,8 @@ export async function POST(
 
             // Get the original content object
             const originalContentObject = schema.list
-              ? entry.contentObject.listWrapper
-              : entry.contentObject;
+              ? sanitizeObject(entry.contentObject.listWrapper)
+              : sanitizeObject(entry.contentObject);
             
             // Sanitize the content object
             const sanitizedContentObject = schema.list

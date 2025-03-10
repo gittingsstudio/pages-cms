@@ -48,7 +48,7 @@ export const getEntry = async (user: User, owner: string, repo: string, branch: 
   const contentObject = name
     ? parseContent(content, schema, config)
     : { body: content };
-
+  
   return {
     sha: response.data.sha,
     name: response.data.name,
