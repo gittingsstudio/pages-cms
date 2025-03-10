@@ -36,7 +36,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  DndContext, 
+  DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
@@ -56,7 +56,7 @@ import {
 } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronLeft, GripVertical, Loader, Plus, Trash2 } from "lucide-react";
-
+import { DeploymentBadge } from "../deployment-badge";
 const SortableItem = ({
   id,
   type,
@@ -81,9 +81,9 @@ const SortableItem = ({
   };
 
   return (
-    <div ref={setNodeRef} className={cn("bg-background flex gap-x-1 rounded-lg border items-center", type === "object" ? "px-2 py-4" : "px-1 py-2", isDragging ? "z-50" : "z-10" )} style={style}>
+    <div ref={setNodeRef} className={cn("bg-background flex gap-x-1 rounded-lg border items-center", type === "object" ? "px-2 py-4" : "px-1 py-2", isDragging ? "z-50" : "z-10")} style={style}>
       <Button type="button" variant="ghost" size="icon-sm" className="h-8 cursor-move" {...attributes} {...listeners}>
-        <GripVertical className="h-4 w-4"/>
+        <GripVertical className="h-4 w-4" />
       </Button>
       {children}
     </div>
@@ -140,7 +140,7 @@ const ListField = ({
       setValue(fieldName, updatedValues);
     }
   };
-  
+
   return (
     <FormField
       name={fieldName}
@@ -182,23 +182,23 @@ const ListField = ({
             {typeof field.list === "object" && field.list?.max && arrayFields.length >= field.list.max
               ? null
               : <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    append(field.type === "object"
-                      ? initializeState(field.fields, {}, true)
-                      : getDefaultValue(field)
-                    );
-                  }}
-                  className="gap-x-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add an entry
-                </Button>
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  append(field.type === "object"
+                    ? initializeState(field.fields, {}, true)
+                    : getDefaultValue(field)
+                  );
+                }}
+                className="gap-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add an entry
+              </Button>
             }
           </div>
-          <FormMessage/>
+          <FormMessage />
         </FormItem>
       )}
     />
@@ -230,7 +230,7 @@ const renderSingleField = (
             <FieldComponent {...fieldProps} field={field} />
           </FormControl>
           {field.description && <FormDescription>{field.description}</FormDescription>}
-          <FormMessage/>
+          <FormMessage />
         </FormItem>
       )}
     />
@@ -244,6 +244,7 @@ const EntryForm = ({
   contentObject,
   onSubmit = (values) => console.log(values),
   history,
+  deployment,
   path,
   options,
 }: {
@@ -279,7 +280,7 @@ const EntryForm = ({
   const renderFields = (fields: Field[], parentName?: string) => {
     return fields.map((field) => {
       if (field.hidden) return null;
-      
+
       const fieldName = parentName ? `${parentName}.${field.name}` : field.name;
 
       if (field.type === "object" && field.list && !supportsList[field.type]) {
@@ -324,31 +325,35 @@ const EntryForm = ({
                   className={cn(buttonVariants({ variant: "outline", size: "icon-xs" }), "mr-4 shrink-0")}
                   href={navigateBack}
                 >
-                  <ChevronLeft className="h-4 w-4"/>
+                  <ChevronLeft className="h-4 w-4" />
                 </Link>
               }
-              
+
               <h1 className="font-semibold text-lg md:text-2xl truncate">{title}</h1>
             </header>
             <div onSubmit={form.handleSubmit(handleSubmit)} className="grid items-start gap-6">
               {renderFields(fields)}
             </div>
           </div>
-          
-          <div className="hidden lg:block w-64">
-            <div className="flex flex-col gap-y-4 sticky top-0">
-              <div className="flex gap-x-2">
-                <Button type="submit" className="w-full" disabled={isSubmitting || !isDirty}>
-                  Save
-                  {isSubmitting && (<Loader className="ml-2 h-4 w-4 animate-spin" />)}
-                </Button>
-                {options ? options : null}
-              </div>
-              {path && history && <EntryHistoryBlock history={history} path={path}/>}
+
+          <div className="hidden lg:flex w-64 flex-col gap-y-4 sticky top-0">
+            <div className="flex gap-x-2">
+              <Button type="submit" className="w-full" disabled={isSubmitting || !isDirty}>
+                Save
+                {isSubmitting && (<Loader className="ml-2 h-4 w-4 animate-spin" />)}
+              </Button>
+              {options ? options : null}
+            </div>
+
+            {path && history && <EntryHistoryBlock history={history} path={path} />}
+
+            <div className="sticky bottom-0 mt-auto">
+              {path && deployment && <DeploymentBadge deployment={deployment} />}
             </div>
           </div>
+
           <div className="lg:hidden fixed top-0 right-0 h-14 flex items-center gap-x-2 z-10 pr-4 md:pr-6">
-            {path && history && <EntryHistoryDropdown history={history} path={path}/>}
+            {path && history && <EntryHistoryDropdown history={history} path={path} />}
             <Button type="submit" disabled={isSubmitting}>
               Save
               {isSubmitting && (<Loader className="ml-2 h-4 w-4 animate-spin" />)}

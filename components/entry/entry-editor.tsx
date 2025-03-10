@@ -40,6 +40,7 @@ export function EntryEditor({
   const [sha, setSha] = useState<string | undefined>();
   const [displayTitle, setDisplayTitle] = useState<string>(title ?? "Edit");
   const [history, setHistory] = useState<Record<string, any>[]>();
+  const [deployment, setDeployment] = useState<Record<string, any>[]>();
   const [isLoading, setIsLoading] = useState(path ? true : false);
   const [error, setError] = useState<string | undefined | null>(null);
   // TODO: this feels like a bit of a hack
@@ -152,6 +153,30 @@ export function EntryEditor({
     };
 
     fetchHistory();
+  }, [config.branch, config.owner, config.repo, path, sha, refetchTrigger, name]);
+
+  useEffect(() => {
+    // TODO: add loading for history ?
+    const fetchDeployment = async () => {
+      if (path) {
+        try {
+          const response = await fetch(`/api/${config.owner}/${config.repo}/${encodeURIComponent(config.branch)}/entries/${encodeURIComponent(path)}/deployments?name=${encodeURIComponent(name)}`);
+          if (!response.ok) throw new Error(`Failed to fetch entry's deployment: ${response.status} ${response.statusText}`);
+
+          const data: any = await response.json();
+
+          if (data.status !== "success") throw new Error(data.message);
+
+          console.log(data.data);
+
+          setDeployment(data.data);
+        } catch (error: any) {
+          console.error(error);
+        }
+      }
+    };
+
+    fetchDeployment();
   }, [config.branch, config.owner, config.repo, path, sha, refetchTrigger, name]);
 
   const onSubmit = async (contentObject: any) => {
@@ -354,6 +379,7 @@ export function EntryEditor({
         onSubmit={onSubmit}
         path={path}
         history={history}
+        deployment={deployment}
         options={path && sha &&
           <FileOptions
             path={path}
