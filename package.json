@@ -70,6 +70,7 @@
     "drizzle-orm": "^0.40.0",
     "install": "^0.13.0",
     "joplin-turndown-plugin-gfm": "^1.0.12",
+    "lodash.merge": "^4.6.2",
     "lucia": "^3.2.2",
     "lucide-react": "^0.477.0",
     "marked": "^15.0.7",
