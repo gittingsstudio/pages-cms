@@ -111,16 +111,6 @@ export async function POST(
               ? mergeDeep(originalContentObject, sanitizedContentObject)
               : sanitizedContentObject;
             
-            return Response.json({
-              status: "success",
-              message: "mergedContentObject",
-              data: {
-                originalContentObject,
-                sanitizedContentObject,
-                mergedContentObject,
-              }
-            });
-            
             const stringifiedContentObject = stringify(
               mergedContentObject,
               {
