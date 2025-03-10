@@ -9,20 +9,25 @@ export function isObject(item: any) {
   return (item && typeof item === 'object' && !Array.isArray(item));
 }
 
-export function mergeDeep(target: any, ...sources: any) {
-  if (!sources.length) return target;
-  const source = sources.shift();
-
-  if (isObject(target) && isObject(source)) {
-    for (const key in source) {
-      if (isObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
-      } else {
-        Object.assign(target, { [key]: source[key] });
+export function mergeDeep(...objects: any[]) {
+  const isObject = (obj: any) => obj && typeof obj === 'object';
+  
+  return objects.reduce((prev, obj) => {
+    Object.keys(obj).forEach(key => {
+      const pVal = prev[key];
+      const oVal = obj[key];
+      
+      if (Array.isArray(pVal) && Array.isArray(oVal)) {
+        prev[key] = pVal.concat(...oVal);
       }
-    }
-  }
-
-  return mergeDeep(target, ...sources);
+      else if (isObject(pVal) && isObject(oVal)) {
+        prev[key] = mergeDeep(pVal, oVal);
+      }
+      else {
+        prev[key] = oVal;
+      }
+    });
+    
+    return prev;
+  }, {});
 }
