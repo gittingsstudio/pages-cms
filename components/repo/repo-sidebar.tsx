@@ -9,6 +9,17 @@ import { RepoNav } from "@/components/repo/repo-nav";
 import { About } from "@/components/about";
 import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 
 const RepoSidebar = ({
   onClick
@@ -21,24 +32,37 @@ const RepoSidebar = ({
   const account = user?.accounts?.find((account) => account.login === repo.owner);
 
   return (
-    <>
-      <header className="border-b flex items-center px-3 py-2">
-        <Link className={buttonVariants({ variant: "ghost", size: "xs" })} href="/" prefetch={true}>
-          <ArrowLeft className="h-4 w-4 mr-1.5" />
-          All projects
-        </Link>
-      </header>
-      <div className="px-3 pt-1">
-        <RepoDropdown onClick={onClick} />
-      </div>
-      <nav className="px-3 flex flex-col gap-y-1 overflow-auto">
-        <RepoNav onClick={onClick}/>
-      </nav>
-      <footer className="flex items-center gap-x-2 border-t px-3 py-2 mt-auto">
-        <User className="mr-auto" onClick={onClick}/>
-        <About onClick={onClick}/>
-      </footer>
-    </>
+    <Sidebar>
+      <SidebarContent>
+        <SidebarGroup>
+          <header className="border-b flex items-center py-2">
+            <Link className={buttonVariants({ variant: "ghost", size: "xs" })} href="/" prefetch={true}>
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              All projects
+            </Link>
+          </header>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <RepoDropdown onClick={onClick} />
+        </SidebarGroup>
+
+        <SidebarGroup className="flex-1 overflow-auto">
+          <SidebarMenu>
+            <nav className="flex flex-col gap-y-1">
+              <RepoNav onClick={onClick} />
+            </nav>
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarFooter>
+          <footer className="flex items-center gap-x-2 py-2">
+            <User className="mr-auto" onClick={onClick} />
+            <About onClick={onClick} />
+          </footer>
+        </SidebarFooter>
+      </SidebarContent>
+    </Sidebar>
   );
 }
 
