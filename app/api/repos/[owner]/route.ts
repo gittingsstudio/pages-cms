@@ -9,8 +9,18 @@ import { collaboratorTable } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest, props: { params: Promise<{ owner: string }> }) {
-  const params = await props.params;
+/**
+ * Fetches repositories for a user.
+ * 
+ * GET /api/repos/[owner]
+ * 
+ * Requires authentication.
+ */
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { owner: string } }
+) {
   try {
     const { user, session } = await getAuth();
     if (!session) return new Response(null, { status: 401 });
@@ -47,8 +57,8 @@ export async function GET(request: NextRequest, props: { params: Promise<{ owner
         });
         repos = response.data.items;
       }
-      
-      repos = repos.map(repo => ({
+
+      repos = repos.filter(repo => repo.permissions.push).map(repo => ({
         owner: repo.owner.login,
         repo: repo.name,
         private: repo.private,

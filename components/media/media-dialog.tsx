@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getSchemaByName } from "@/lib/schema";
 
 export interface MediaDialogHandle {
   open: () => void;
@@ -23,23 +24,31 @@ export interface MediaDialogHandle {
 const MediaDialog = (
   {
     ref,
+    media,
     selected,
     onSubmit,
     maxSelected,
     initialPath,
-    children
+    children,
+    extensions
   }: {
     selected: string[],
     onSubmit: (images: string[]) => void,
+    selected?: string[],
     maxSelected?: number,
     initialPath?: string,
-    children?: React.ReactNode
+    children?: React.ReactNode,
+    extensions?: string[]
   } & {
     ref: React.RefObject<unknown>;
   }
 ) => {
   const { config } = useConfig();
   if (!config) throw new Error(`Configuration not found.`);
+
+  const configMedia = media
+    ? getSchemaByName(config.object, media, "media")
+    : config.object.media[0];
 
   const selectedImagesRef = useRef(selected || []);
   const [open, setOpen] = useState(false);
@@ -59,7 +68,7 @@ const MediaDialog = (
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {children && 
+      {children &&
         <DialogTrigger asChild>
           {children}
         </DialogTrigger>
@@ -69,12 +78,12 @@ const MediaDialog = (
           <DialogTitle>Select images</DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
-        
-        <MediaView initialSelected={selected || []} onSelect={handleSelect} maxSelected={maxSelected} initialPath={initialPath || ""}/>
-        {config.object.media?.input &&
+
+        <MediaView media={configMedia.name} extensions={extensions} initialSelected={selected || []} onSelect={handleSelect} maxSelected={maxSelected} initialPath={initialPath || ""} />
+        {configMedia.input &&
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="submit" onClick={handleSubmit}>Save changes</Button>
+              <Button type="submit" onClick={handleSubmit}>Select</Button>
             </DialogClose>
           </DialogFooter>
         }

@@ -8,6 +8,16 @@ import { getFileExtension, normalizePath } from "@/lib/utils/file";
 import { getAuth } from "@/lib/auth";
 import { getToken } from "@/lib/token";
 
+/**
+ * Fetches and parses individual file contents from GitHub repositories
+ * (usually for editing).
+ * 
+ * GET /api/[owner]/[repo]/[branch]/entries/[path]?name=[schemaName]
+ * 
+ * Requires authentication. If no schema name is provided, we return the raw
+ * contents.
+ */
+
 export async function GET(
   request: NextRequest,
   props: { params: Promise<{ owner: string, repo: string, branch: string, path: string }> }
@@ -81,6 +91,7 @@ export async function GET(
   }
 }
 
+// Parse the entry into an object based on the content schema.
 const parseContent = (
   content: string,
   schema: Record<string, any>,

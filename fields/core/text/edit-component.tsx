@@ -9,9 +9,11 @@ const EditComponent = (
     ...props
   }
 ) => {
+  const { value, field, onChange } = props;
   const internalRef = useRef<HTMLTextAreaElement | null>(null);
 
   const adjustHeight = (el: HTMLTextAreaElement | null) => {
+    if (field.options?.autoresize === false) return;
     if (!el) return;
     el.style.height = "auto";
     const totalBorderWidth = 2;
@@ -28,7 +30,15 @@ const EditComponent = (
     adjustHeight(event.target);
   };
 
-  return <Textarea {...props} ref={internalRef} rows={props.rows ?? 6} onInput={handleInput} className="text-base" />;
-};
+  return <Textarea
+    {...props}
+    ref={internalRef}
+    rows={field.options?.rows ?? 6}
+    minLength={field.options?.minlength}
+    maxLength={field.options?.maxlength}
+    onInput={handleInput}
+    className="text-base"
+  />;
+});
 
 export { EditComponent };

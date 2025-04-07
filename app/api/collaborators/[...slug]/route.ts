@@ -6,8 +6,18 @@ import { db } from "@/db";
 import { collaboratorTable } from "@/db/schema";
 import { getInstallations, getInstallationRepos } from "@/lib/githubApp";
 
-export async function GET(request: NextRequest, props: { params: Promise<{ slug: string[] }> }) {
-  const params = await props.params;
+/**
+ * Fetches collaborators for a repository.
+ * 
+ * GET /api/collaborators/[owner]/[repo]
+ * 
+ * Requires authentication. Only accessible to GitHub users (not collaborators).
+ */
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { slug: string[] } }
+) {
   try {
     const { user, session } = await getAuth();
     if (!session) return new Response(null, { status: 401 });

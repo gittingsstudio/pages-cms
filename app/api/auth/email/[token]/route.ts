@@ -9,10 +9,20 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { emailLoginTokenTable, userTable } from "@/db/schema";
 
-export async function GET(request: Request, props: { params: Promise<{ token: string }> }) {
-    const params = await props.params;
-    const { session } = await getAuth();
-    if (session) return redirect("/");
+/**
+ * Handles email login authentication (for collaborators).
+ * 
+ * GET /api/auth/email/[token]
+ * 
+ * Requires email login token.
+ */
+
+export async function GET(
+	request: Request,
+	{ params }: { params: { token: string } }
+) {
+	const { session } = await getAuth();
+  if (session) return redirect("/");
 
     const verificationToken = params.token;
 

@@ -9,11 +9,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run db:migrate",
+    "build": "next build",
+    "postbuild": "npm run db:migrate",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "npx drizzle-kit generate",
-    "db:migrate": "npx drizzle-kit migrate"
+    "db:migrate": "npx drizzle-kit migrate",
+    "db:clear-cache": "npx tsx db/scripts/clear-cache.ts"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.9",
@@ -70,7 +72,7 @@
     "install": "^0.13.0",
     "joplin-turndown-plugin-gfm": "^1.0.12",
     "lucia": "^3.2.2",
-    "lucide-react": "^0.477.0",
+    "lucide-react": "^0.479.0",
     "marked": "^15.0.7",
     "next": "15.2.1",
     "next-themes": "^0.4.4",
@@ -87,6 +89,7 @@
     "tailwindcss-animate": "^1.0.7",
     "turndown": "^7.2.0",
     "use-debounce": "^10.0.4",
+    "uuid": "^11.1.0",
     "yaml": "^2.7.0",
     "zod": "^3.24.2"
   },
