@@ -39,6 +39,6 @@ const EditComponent = (
     onInput={handleInput}
     className="text-base"
   />;
-});
+};
 
 export { EditComponent };
