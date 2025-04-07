@@ -58,17 +58,7 @@ export function RepoLayout({
         <div className="fixed top-0 left-0 right-0 bg-background border-b h-14 flex items-center px-4 md:px-6">
           <SidebarTrigger />
         </div>
-        <div className={cn(
-          "invisible opacity-0 fixed inset-0 z-50 transition-all duration-150 bg-black/80",
-          isMenuOpen ? "visible opacity-100" : ""
-        )}
-          onClick={handleMenuClose}
-        ></div>
-        <aside
-          className={cn(
-            "bg-background invisible opacity-0 fixed inset-y-0 z-50 -translate-x-full transition-all ease-in-out duration-500 flex flex-col gap-y-2 h-screen max-w-72 w-[calc(100vw-4rem)] border-r shadow-lg",
-            isMenuOpen ? "visible opacity-100 translate-x-0 " : ""
-          )}>
+        <aside>
           <RepoSidebar onClick={handleMenuClose} />
         </aside>
       </div>
