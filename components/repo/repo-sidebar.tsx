@@ -7,7 +7,7 @@ import { User } from "@/components/user";
 import { RepoDropdown } from "@/components/repo/repo-dropdown";
 import { RepoNav } from "@/components/repo/repo-nav";
 import { About } from "@/components/about";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Sidebar,
@@ -16,10 +16,13 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const RepoSidebar = ({
   onClick
@@ -34,18 +37,7 @@ const RepoSidebar = ({
   return (
     <Sidebar>
       <SidebarContent>
-        <SidebarGroup>
-          <header className="border-b flex items-center py-2">
-            <Link className={buttonVariants({ variant: "ghost", size: "xs" })} href="/" prefetch={true}>
-              <ArrowLeft className="h-4 w-4 mr-1.5" />
-              All projects
-            </Link>
-          </header>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <RepoDropdown onClick={onClick} />
-        </SidebarGroup>
+        <RepoDropdown onClick={onClick} />
 
         <SidebarGroup className="flex-1 overflow-auto">
           <SidebarMenu>
@@ -56,9 +48,9 @@ const RepoSidebar = ({
         </SidebarGroup>
 
         <SidebarFooter>
-          <footer className="flex items-center gap-x-2 py-2">
-            <User className="mr-auto" onClick={onClick} />
-            <About onClick={onClick} />
+          <footer>
+            <User onClick={onClick} />
+            {/* <About onClick={onClick} /> */}
           </footer>
         </SidebarFooter>
       </SidebarContent>
