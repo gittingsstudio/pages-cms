@@ -76,6 +76,7 @@ const handleAddCollaborator = async (prevState: any, formData: FormData) => {
 			});
 	
 			if (error) {
+				console.log(error);	
 				console.error(`Failed to send invitation email to ${email}:`, error.message);
 				throw new Error(error.message);
 			}
