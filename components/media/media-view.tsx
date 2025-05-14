@@ -13,7 +13,7 @@ import {
 } from "@/lib/utils/file";
 import { EmptyCreate } from "@/components/empty-create";
 import { FolderCreate} from "@/components/folder-create";
-import { FileOptions } from "@/components/file-options";
+import { FileOptions } from "@/components/file/file-options";
 import { PathBreadcrumb } from "@/components/path-breadcrumb";
 import { MediaUpload} from "./media-upload";
 import { Message } from "@/components/message";
@@ -121,7 +121,7 @@ const MediaView = ({
     }
     fetchMedia();
     
-  }, [config, path]);
+  }, [config, path, mediaConfig.name]);
 
   const handleUpload = useCallback((entry: any) => {
     setData((prevData) => {
