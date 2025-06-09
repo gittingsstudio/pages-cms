@@ -61,6 +61,7 @@ import {
 import { toast } from "sonner";
 import { getSchemaByName } from "@/lib/schema";
 import { extensionCategories, normalizePath } from "@/lib/utils/file";
+import Iframe from './iframe.ts'
 
 const EditComponent = forwardRef((props: any, ref) => {
   const { config } = useConfig();
@@ -81,7 +82,7 @@ const EditComponent = forwardRef((props: any, ref) => {
 
     let extensions = extensionCategories['image'];
 
-    const fieldExtensions = field.options?.extensions 
+    const fieldExtensions = field.options?.extensions
       ? field.options.extensions
       : field.options?.categories
         ? field.options.categories.flatMap((category: string) => extensionCategories[category])
@@ -115,7 +116,7 @@ const EditComponent = forwardRef((props: any, ref) => {
 
   const rootPath = useMemo(() => {
     if (!mediaConfig) return undefined;
-    
+
     if (!field.options?.path) return mediaConfig?.input;
 
     const normalizedPath = normalizePath(field.options.path);
@@ -135,6 +136,7 @@ const EditComponent = forwardRef((props: any, ref) => {
       StarterKit.configure({
         dropcursor: { width: 2 }
       }),
+      Iframe,
       Image.extend({
         addAttributes() {
           return {
@@ -480,13 +482,13 @@ const EditComponent = forwardRef((props: any, ref) => {
           </div>
         </BubbleMenu>}
         <EditorContent editor={editor} />
-        {mediaConfig && <MediaDialog 
-          ref={mediaDialogRef} 
+        {mediaConfig && <MediaDialog
+          ref={mediaDialogRef}
           media={mediaConfig?.name}
           initialPath={rootPath}
           extensions={allowedExtensions}
-          selected={[]} 
-          onSubmit={handleMediaDialogSubmit} 
+          selected={[]}
+          onSubmit={handleMediaDialogSubmit}
         />}
       </div>
     </>
