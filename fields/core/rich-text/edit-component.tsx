@@ -61,7 +61,7 @@ import {
 import { toast } from "sonner";
 import { getSchemaByName } from "@/lib/schema";
 import { extensionCategories, normalizePath } from "@/lib/utils/file";
-import Iframe from './iframe.ts'
+import Iframe from './iframe'
 
 const EditComponent = forwardRef((props: any, ref) => {
   const { config } = useConfig();
