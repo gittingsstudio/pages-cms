@@ -47,23 +47,18 @@ const write = (value: any, field: Field, config: Record<string, any>) => {
       codeBlockStyle: "fenced"
     });
     turndownService.use([tables, strikethrough]);
+    turndownService.keep(['iframe']);
     turndownService.addRule("retain-html", {
       filter: (node: any, options: any) => (
         (
           node.nodeName === "IMG" && (node.getAttribute("width") || node.getAttribute("height"))
         ) ||
         (
-          ["P", "DIV", "H1", "H2", "H3", "H4", "H5", "H6"].includes(node.nodeName) && (node.getAttribute("style") || node.getAttribute("class"))
+          ["P", "DIV", "H1", "H2", "H3", "H4", "H5", "H6", "IFRAME"].includes(node.nodeName) && (node.getAttribute("style") || node.getAttribute("class"))
         )
       ),
       replacement: (content: string, node: any, options: any) => node.outerHTML
     });
-
-    turndownService.addRule("preserve-iframes", {
-      filter: "iframe",
-      replacement: (content: string, node: any) => node.outerHTML
-    });
-
     // We need to strip <colgroup> and <col> tags otherwise turndown won't convert tables
     content = content.replace(/<colgroup>.*?<\/colgroup>/g, '');
 
