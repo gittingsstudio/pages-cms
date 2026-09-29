@@ -228,11 +228,16 @@ export function Entry({
     entryApiUrl,
     fetchEntryByUrl,
     {
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
+      // Refetching on focus/reconnect resets the form and wipes unsaved edits
+      // (e.g. when switching windows to copy content), so only fetch on mount.
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
       dedupingInterval: 2000,
     },
   );
+
+  const hasUnsavedChangesRef = useRef(false);
+  hasUnsavedChangesRef.current = isFormDirty || hasRegisteredChanges;
 
   useEffect(() => {
     if (!path) return;
@@ -241,6 +246,8 @@ export function Entry({
 
   useEffect(() => {
     if (!swrEntryData || !path) return;
+    // Never replace the form's contents underneath unsaved edits.
+    if (hasUnsavedChangesRef.current) return;
     setEntry(swrEntryData);
     setSha(swrEntryData.sha);
     setHasRegisteredChanges(false);
