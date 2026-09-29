@@ -20,6 +20,7 @@ import { useOptionalRepoHeader } from "@/components/repo/repo-header-context";
 import { MediaUpload} from "./media-upload";
 import { Thumbnail } from "@/components/thumbnail";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import {
@@ -52,23 +53,55 @@ import {
   File,
   Folder,
   FolderPlus,
+  Search,
   Upload
 } from "lucide-react";
+
+function MediaSearch({
+  onSearchChange,
+}: {
+  onSearchChange: (value: string) => void;
+}) {
+  const [searchInput, setSearchInput] = useState("");
+
+  useEffect(() => {
+    const timeout = setTimeout(() => onSearchChange(searchInput), 150);
+    return () => clearTimeout(timeout);
+  }, [searchInput, onSearchChange]);
+
+  return (
+    <div className="relative hidden sm:block w-44 md:w-56">
+      <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-50 pointer-events-none" />
+      <Input
+        type="search"
+        className="pl-9"
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        placeholder="Search media..."
+        aria-label="Search media"
+      />
+    </div>
+  );
+}
 
 function MediaHeaderActions({
   actionNode,
   mediaName,
   path,
   onFolderCreate,
+  onSearchChange,
 }: {
   actionNode?: ReactNode;
   mediaName: string;
   path: string;
   onFolderCreate: (entry: unknown) => void;
+  onSearchChange: (value: string) => void;
 }) {
   return (
     <div className="flex items-center gap-x-2 shrink-0">
       {actionNode}
+      {/* Keyed by path so the search clears when changing folder. */}
+      <MediaSearch key={path} onSearchChange={onSearchChange} />
       <Tooltip>
         <TooltipTrigger asChild>
           <div>
@@ -267,16 +300,25 @@ const MediaView = ({
     return mediaConfig.input;
   });
   const [data, setData] = useState<MediaItem[] | undefined>(undefined);
+  const [search, setSearch] = useState("");
+  const normalizedSearch = search.trim().toLowerCase();
+
+  useEffect(() => {
+    setSearch("");
+  }, [path]);
   
-  // Filter the data based on filteredExtensions when displaying
+  // Filter the data based on filteredExtensions and search when displaying
   const filteredData = useMemo(() => {
     if (!data) return undefined;
-    if (filteredExtensionsSet.size === 0) return data;
-    return data.filter(item => 
-      item.type === "dir" ||
-      filteredExtensionsSet.has(item.extension?.toLowerCase())
-    );
-  }, [data, filteredExtensionsSet]);
+    return data.filter(item => {
+      if (
+        filteredExtensionsSet.size > 0
+        && item.type !== "dir"
+        && !filteredExtensionsSet.has(item.extension?.toLowerCase())
+      ) return false;
+      return !normalizedSearch || item.name.toLowerCase().includes(normalizedSearch);
+    });
+  }, [data, filteredExtensionsSet, normalizedSearch]);
 
   const sortMediaItems = useCallback((items: MediaItem[]) => {
     return [...items].sort((a, b) => {
@@ -592,6 +634,7 @@ const MediaView = ({
           mediaName={mediaConfig.name}
           path={path}
           onFolderCreate={handleFolderCreate}
+          onSearchChange={setSearch}
         />
       </MediaUpload>
     </div>
@@ -692,6 +735,13 @@ const MediaView = ({
                   </li>
                 )}
               </ul>
+            : normalizedSearch
+              ? <Empty className="border-0 shadow-none">
+                  <EmptyHeader>
+                    <EmptyTitle>No matches</EmptyTitle>
+                    <EmptyDescription>No files or folders in this folder match &ldquo;{search.trim()}&rdquo;.</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
             : <Empty className="border-0 shadow-none">
                 <EmptyHeader>
                   <EmptyTitle>Empty folder</EmptyTitle>
@@ -734,6 +784,7 @@ const MediaView = ({
               mediaName={mediaConfig.name}
               path={path}
               onFolderCreate={handleFolderCreate}
+              onSearchChange={setSearch}
             />
           </header>
           {mediaGrid}
