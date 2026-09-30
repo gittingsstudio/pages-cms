@@ -161,7 +161,7 @@ export async function POST(
 // /!\ THE FOLLOWING IS A BIT OF A WTF... But hear me out.
 // We can't easily rename a file via the GitHub API. We could copy the file with a new path and
 // then delete the original, but we'd then lose the commit history. So we resort to a rather
-// barbaric approach, chaining 5 sequential API calls. More about the why and how:
+// barbaric approach, chaining several sequential API calls. More about the why and how:
 // https://stackoverflow.com/questions/31563444/rename-a-file-with-github-api
 // https://medium.com/@obodley/renaming-a-file-using-the-git-api-fed1e6f04188
 // https://www.levibotelho.com/development/commit-a-file-with-the-github-api/
@@ -185,29 +185,52 @@ const githubRenameFile = async (
   // Step 1: Get the current branch commit SHA
   const currentSha = await getBranchHeadSha(owner, repo, branch, token);
 
-  // Step 2: Get the current tree
-  const { data: treeData } = await octokit.rest.git.getTree({
+  // Step 2: Get the root tree of the current commit and locate the file's entry.
+  // We walk the directories one level at a time rather than fetching the whole tree
+  // recursively, which is slow (and may be truncated) on large repositories.
+  const { data: currentCommit } = await octokit.rest.git.getCommit({
     owner,
     repo,
-    tree_sha: currentSha,
-    recursive: "true",
+    commit_sha: currentSha,
   });
-  const tree = treeData.tree;
+  const baseTreeSha = currentCommit.tree.sha;
 
-  // Step 3: Create a new tree with the updated path
-  const newTree = tree
-    .filter(item => item.type !== 'tree')
-    .map(item => ({
-      path: item.path === path ? newPath : item.path,
-      mode: item.mode as "100644" | "100755" | "040000" | "160000" | "120000",
-      type: item.type as "commit" | "tree" | "blob",
-      sha: item.sha,
-    }));
+  const segments = path.split("/");
+  let treeSha = baseTreeSha;
+  let entry: { mode?: string; type?: string; sha?: string } | undefined;
+  for (let i = 0; i < segments.length; i++) {
+    const { data: level } = await octokit.rest.git.getTree({ owner, repo, tree_sha: treeSha });
+    const match = level.tree.find(item => item.path === segments[i]);
+    if (!match?.sha) throw createHttpError(`File "${path}" not found.`, 404);
+    if (i === segments.length - 1) {
+      entry = match;
+    } else {
+      if (match.type !== "tree") throw createHttpError(`File "${path}" not found.`, 404);
+      treeSha = match.sha;
+    }
+  }
+  if (!entry || entry.type !== "blob") throw createHttpError(`File "${path}" not found.`, 404);
 
+  // Step 3: Create a new tree on top of the existing one, only adding the new path and
+  // removing the old one (a null sha deletes the entry).
   const { data: newTreeData } = await octokit.rest.git.createTree({
     owner,
     repo,
-    tree: newTree,
+    base_tree: baseTreeSha,
+    tree: [
+      {
+        path: newPath,
+        mode: entry.mode as "100644" | "100755" | "120000",
+        type: "blob",
+        sha: entry.sha,
+      },
+      {
+        path,
+        mode: entry.mode as "100644" | "100755" | "120000",
+        type: "blob",
+        sha: null,
+      },
+    ],
   });
   const newTreeSha = newTreeData.sha;
 
