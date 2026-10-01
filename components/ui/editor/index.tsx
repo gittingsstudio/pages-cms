@@ -34,6 +34,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SlashCommands from "./slash-command/commands";
+import { HtmlBlock } from "./html-block";
+import { fromEditorHtml, toEditorContent } from "./html-block-utils";
 import type {
   ImagePickerContext,
   ImagePickerFileResult,
@@ -314,6 +316,7 @@ export function Editor({
         includeChildren: true,
       }),
       Markdown,
+      HtmlBlock,
       SlashCommands.configure({
         onRequestImage: enableImages ? (onRequestImage ?? null) : null,
         onInsertLocalImageFile: ({ file, alt, title }) => {
@@ -326,7 +329,7 @@ export function Editor({
         imageSlashFallback: imageFallback === "prompt-url" ? "prompt-url" : "none",
       }),
     ],
-    content: value || (format === "markdown" ? "" : "<p></p>"),
+    content: toEditorContent(value, format) || (format === "markdown" ? "" : "<p></p>"),
     contentType: format,
     editorProps: {
       attributes: {
@@ -390,8 +393,7 @@ export function Editor({
       const nextValue =
         format === "markdown"
           ? normalizeMarkdownTables(nextEditor.getMarkdown())
-          : nextEditor
-              .getHTML()
+          : fromEditorHtml(nextEditor.getHTML())
               .replace(/\sdata-upload-id="[^"]*"/g, "")
               .replace(/\sdata-uploading="[^"]*"/g, "")
               .replace(/\sdata-upload-error="[^"]*"/g, "");
@@ -439,12 +441,12 @@ export function Editor({
     if (!editor) return;
     if (value === lastEmittedValueRef.current) return;
 
-    const current = format === "markdown" ? normalizeMarkdownTables(editor.getMarkdown()) : editor.getHTML();
+    const current = format === "markdown" ? normalizeMarkdownTables(editor.getMarkdown()) : fromEditorHtml(editor.getHTML());
     const hasChanged =
       format === "markdown" ? value.trimEnd() !== current.trimEnd() : value !== current;
 
     if (hasChanged) {
-      editor.commands.setContent(value || (format === "markdown" ? "" : "<p></p>"), {
+      editor.commands.setContent(toEditorContent(value, format) || (format === "markdown" ? "" : "<p></p>"), {
         emitUpdate: false,
         contentType: format,
       });
