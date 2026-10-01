@@ -4,14 +4,13 @@ import { isContentOperationAllowed } from "@/lib/operations";
 import { writeFns } from "@/fields/registry";
 import { configVersion, parseConfig, normalizeConfig } from "@/lib/config";
 import { stringify, parse } from "@/lib/serialization";
-import { deepMap, generateZodSchema, getSchemaByName, sanitizeObject } from "@/lib/schema";
+import { deepMap, generateZodSchema, getSchemaByName, mergeContent, sanitizeObject } from "@/lib/schema";
 import { getConfig, updateConfig } from "@/lib/config-store";
 import { getFileExtension, getFileName, normalizePath, serializedTypes, getParentPath } from "@/lib/utils/file";
 import { assertGithubIdentity } from "@/lib/authz-shared";
 import { getToken } from "@/lib/token";
 import { updateFileCache } from "@/lib/github-cache-file";
 import { createHttpError, toErrorResponse } from "@/lib/api-error";
-import mergeWith from "lodash.mergewith";
 import { buildCommitTokens, resolveCommitIdentity, resolveCommitMessage } from "@/lib/commit-message";
 import { requireApiUserSession } from "@/lib/session-server";
 
@@ -140,11 +139,7 @@ export async function POST(
               const existingContent = Buffer.from(response.data.content, "base64").toString();
               const existingContentObject = parse(existingContent, { format: schema.format, delimiters: schema.delimiters });
 
-              finalContentObject = mergeWith({}, existingContentObject, unwrappedContentObject, (objValue: any, srcValue: any) => {
-                if (Array.isArray(srcValue)) {
-                  return srcValue;
-                }
-              });
+              finalContentObject = mergeContent(existingContentObject, finalContentObject, schema.fields);
             }
             
             const stringifiedContentObject = stringify(

@@ -278,6 +278,46 @@ const sanitizeObject = (object: any): any => {
   return object;
 };
 
+const isPlainObject = (value: any): value is Record<string, any> =>
+  value != null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date);
+
+// Merge submitted content onto the existing content of a file. Fields defined in the schema
+// always take the submitted value (including when they've been cleared), only keys the
+// schema doesn't know about are preserved from the existing content.
+const mergeContent = (
+  existingContent: any,
+  content: any,
+  fields: Field[]
+): Record<string, any> => {
+  const result: Record<string, any> = isPlainObject(existingContent) ? { ...existingContent } : {};
+  const source = isPlainObject(content) ? content : {};
+
+  fields.forEach(field => {
+    const existingValue = result[field.name];
+    const value = source[field.name];
+
+    // Hidden fields aren't editable, we never clear them
+    if (value === undefined && field.hidden) return;
+
+    if (!field.list && field.type === "object" && isPlainObject(existingValue)) {
+      result[field.name] = mergeContent(existingValue, value, field.fields || []);
+    } else if (!field.list && field.type === "block" && isPlainObject(existingValue) && isPlainObject(value)) {
+      const blockKey = field.blockKey || "_block";
+      const blockDef = field.blocks?.find(b => b.name === value[blockKey]);
+      // Keys from another block type are dropped when the block type changes
+      result[field.name] = blockDef && existingValue[blockKey] === value[blockKey]
+        ? { ...mergeContent(existingValue, value, blockDef.fields || []), [blockKey]: value[blockKey] }
+        : value;
+    } else if (value === undefined) {
+      delete result[field.name];
+    } else {
+      result[field.name] = value;
+    }
+  });
+
+  return result;
+};
+
 const getSchemaGroupTrail = (
   config: Record<string, any> | null | undefined,
   name: string,
@@ -458,6 +498,7 @@ export {
   initializeState,
   getDefaultValue,
   sanitizeObject,
+  mergeContent,
   getSchemaByName,
   getFieldByPath,
   getPrimaryField,
