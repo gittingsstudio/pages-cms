@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { Thumbnail } from "@/components/thumbnail";
 import { Field } from "@/types/field";
-import { useConfig } from "@/contexts/config-context";
 
 const ViewComponent = ({
   value,
@@ -22,13 +21,9 @@ const ViewComponent = ({
         : value;
   }, [value]);
 
-  const { config } = useConfig();
-
-  const mediaName = field.options?.media || config?.object.media?.[0]?.name;
-
   return (
     <span className="flex items-center gap-x-1.5">
-      <Thumbnail name={mediaName} path={path} className="w-8 rounded-md"/>
+      <Thumbnail path={path} width={96} className="w-8 rounded-md"/>
       {extraValuesCount > 0 && (
         <span className="text-muted-foreground text-xs">
           +{extraValuesCount}

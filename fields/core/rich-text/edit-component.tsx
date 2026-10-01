@@ -19,14 +19,15 @@ import {
   type MediaDialogHandle,
 } from "@/components/media/media-dialog";
 import { useConfig } from "@/contexts/config-context";
-import { useRepo } from "@/contexts/repo-context";
 import { getSchemaByName } from "@/lib/schema";
 import {
-  getRawUrl,
+  editorImageWidth,
+  getImageUrl,
   getRelativeUrl,
   htmlSwapPrefix,
-  rawToRelativeUrls,
-  relativeToRawUrls,
+  imageToRelativeUrls,
+  isRepoUrl,
+  relativeToImageUrls,
   swapPrefix,
 } from "@/lib/github-image";
 import {
@@ -286,38 +287,9 @@ const rewriteMarkdownImagesSync = (
   return rebuilt;
 };
 
-const rewriteMarkdownImagesAsync = async (
-  markdown: string,
-  transformUrl: (url: string) => Promise<string>,
-) => {
-  const matches = findMarkdownImageTargets(markdown);
-  if (!matches.length) return markdown;
-
-  let rebuilt = "";
-  let cursor = 0;
-
-  for (const match of matches) {
-    const parsed = parseMarkdownTarget(match.target);
-    const nextUrl = await transformUrl(parsed.url);
-    const nextTarget = formatMarkdownTarget(
-      nextUrl,
-      parsed.rest,
-      parsed.wrapped,
-    );
-
-    rebuilt += markdown.slice(cursor, match.targetStart);
-    rebuilt += nextTarget;
-    cursor = match.targetEnd;
-  }
-
-  rebuilt += markdown.slice(cursor);
-  return rebuilt;
-};
-
 const EditComponent = forwardRef(
   (props: EditProps, ref: React.Ref<HTMLDivElement>) => {
     const { config } = useConfig();
-    const { isPrivate } = useRepo();
 
     const {
       value,
@@ -418,9 +390,10 @@ const EditComponent = forwardRef(
     }, [mediaConfig, options.categories, options.extensions]);
 
     const toDisplayImageUrl = useCallback(
-      async (url: string) => {
+      (url: string) => {
         if (!config || !mediaConfig) return url;
         if (!url || isExternalUrl(url) || isDataUrl(url)) return url;
+        if (isRepoUrl(config.owner, config.repo, config.branch, url)) return url;
         const decodedUrl = normalizeMediaPath(decodePathSafely(url));
         const canonicalOutputPath = swapPrefix(
           decodedUrl,
@@ -443,30 +416,24 @@ const EditComponent = forwardRef(
           return url;
         }
 
-        try {
-          const rawUrl = await getRawUrl(
-            config.owner,
-            config.repo,
-            config.branch,
-            mediaConfig.name,
-            normalizedInputPath,
-            isPrivate,
-            true,
-          );
-          // Keep output-space path canonical when raw URL resolution misses.
-          return rawUrl || canonicalOutputPath;
-        } catch {
-          return canonicalOutputPath;
-        }
+        const imageUrl = getImageUrl(
+          config.owner,
+          config.repo,
+          config.branch,
+          normalizedInputPath,
+          { width: editorImageWidth },
+        );
+        // Keep output-space path canonical when the path can't be resolved.
+        return imageUrl || canonicalOutputPath;
       },
-      [config, isPrivate, mediaConfig],
+      [config, mediaConfig],
     );
 
     const toCanonicalImageUrl = useCallback(
       (url: string) => {
         if (!config || !mediaConfig) return url;
         if (!url) return url;
-        if (isExternalUrl(url) && !url.startsWith("https://raw.githubusercontent.com/")) {
+        if (isExternalUrl(url) && !isRepoUrl(config.owner, config.repo, config.branch, url)) {
           return url;
         }
 
@@ -501,13 +468,12 @@ const EditComponent = forwardRef(
             mediaConfig.input,
             true,
           );
-          return relativeToRawUrls(
+          return relativeToImageUrls(
             config.owner,
             config.repo,
             config.branch,
-            mediaConfig.name,
             withInputPrefix,
-            isPrivate,
+            editorImageWidth,
           );
         }
 
@@ -520,17 +486,16 @@ const EditComponent = forwardRef(
           mediaConfig.input,
           true,
         );
-        const htmlNormalized = await relativeToRawUrls(
+        const htmlNormalized = relativeToImageUrls(
           config.owner,
           config.repo,
           config.branch,
-          mediaConfig.name,
           withInputPrefixEverywhere,
-          isPrivate,
+          editorImageWidth,
         );
-        return rewriteMarkdownImagesAsync(htmlNormalized, toDisplayImageUrl);
+        return rewriteMarkdownImagesSync(htmlNormalized, toDisplayImageUrl);
       },
-      [config, format, isPrivate, mediaConfig, toDisplayImageUrl],
+      [config, format, mediaConfig, toDisplayImageUrl],
     );
 
     const editorToSource = useCallback(
@@ -538,7 +503,7 @@ const EditComponent = forwardRef(
         if (!mediaConfig || !config || !editorContent) return editorContent;
 
         if (format === "html") {
-          const withRelativeUrls = rawToRelativeUrls(
+          const withRelativeUrls = imageToRelativeUrls(
             config.owner,
             config.repo,
             config.branch,
@@ -555,7 +520,7 @@ const EditComponent = forwardRef(
           editorContent,
           toCanonicalImageUrl,
         );
-        const withRelativeHtml = rawToRelativeUrls(
+        const withRelativeHtml = imageToRelativeUrls(
           config.owner,
           config.repo,
           config.branch,

@@ -120,7 +120,7 @@ const SortableItem = ({ id, file, config, media, onRemove, readonly = false }: {
   return (
     <div ref={setNodeRef} style={style}>
       <div title={file} className={readonly ? undefined : "cursor-move"} {...(!readonly ? attributes : {})} {...(!readonly ? listeners : {})}>
-        <Thumbnail name={media} path={file} className="rounded-md w-28 h-28"/>
+        <Thumbnail path={file} className="rounded-md w-28 h-28"/>
       </div>
       <ImageTeaser file={file} config={config} onRemove={onRemove} />
     </div>
@@ -310,7 +310,7 @@ const EditComponent = forwardRef((props: EditorProps, ref: React.Ref<HTMLInputEl
             ) : (
               <div className="aspect-square w-28 relative">
                 <div title={files[0].path}>
-                  <Thumbnail name={mediaConfig.name} path={files[0].path} className="rounded-md w-28 h-28"/>
+                  <Thumbnail path={files[0].path} className="rounded-md w-28 h-28"/>
                 </div>
                 <ImageTeaser file={files[0].path} config={config} onRemove={isReadonly ? undefined : () => handleRemove(files[0].id)} />
               </div>
