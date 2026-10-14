@@ -11,6 +11,28 @@ import { requireGithubUserToken } from "@/lib/authz-server";
 import { hasGithubIdentity } from "@/lib/authz-shared";
 import { collaboratorMatchesUser } from "@/lib/collaborator-access";
 
+// The installations are listed on every page load, we keep them in memory for a minute
+// (per user). They only drive the list of accounts, not access to repositories.
+const INSTALLATIONS_TTL_MS = 60 * 1000;
+const installationsCache = new Map<string, { expiresAt: number; value: Promise<any[]> }>();
+
+const getUserInstallations = (userId: string, token: string) => {
+  const now = Date.now();
+  const cached = installationsCache.get(userId);
+  if (cached && cached.expiresAt > now) return cached.value;
+
+  installationsCache.forEach((item, key) => {
+    if (item.expiresAt <= now) installationsCache.delete(key);
+  });
+
+  const value = getInstallations(token);
+  installationsCache.set(userId, { expiresAt: now + INSTALLATIONS_TTL_MS, value });
+  value.catch(() => {
+    if (installationsCache.get(userId)?.value === value) installationsCache.delete(userId);
+  });
+  return value;
+};
+
 const getAccounts = async (user: User) => {
 	let accounts: Array<{
     login: string;
@@ -23,7 +45,7 @@ const getAccounts = async (user: User) => {
 	if (githubAccount?.accessToken && hasGithubIdentity(user)) {
 		const token = await requireGithubUserToken(user);
 		
-		const installations = await getInstallations(token);
+		const installations = await getUserInstallations(user.id, token);
 
 		accounts = [
 			...installations.map((installation: any) => ({
