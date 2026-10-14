@@ -15,6 +15,14 @@ import { User } from "@/types/user";
 import { getGithubAccount } from "@/lib/github-account";
 import { createHttpError } from "@/lib/api-error";
 import { collaboratorMatchesUserForRepo } from "@/lib/collaborator-access";
+import { checkRepoAccess } from "@/lib/github-cache-permissions";
+
+// How long a successful check of a user's access to a repo is reused for. GitHub still
+// enforces permissions on every call made with the user's token.
+const USER_REPO_ACCESS_TTL_MIN = 5;
+
+const INSTALLATION_ID_TTL_MS = 5 * 60 * 1000;
+const installationIdCache = new Map<string, { id: number; expiresAt: number }>();
 
 const installationTokenRefreshInFlight = new Map<number, Promise<string>>();
 
@@ -27,7 +35,10 @@ const getToken = cache(async (
 ) => {
   const githubAccount = await getGithubAccount(user.id);
   if (githubAccount?.accessToken) {
-    const hasGithubAccess = await canAccessRepoWithToken(githubAccount.accessToken, owner, repo);
+    const githubId = Number(githubAccount.accountId);
+    const hasGithubAccess = Number.isInteger(githubId)
+      ? await checkRepoAccess(githubAccount.accessToken, owner, repo, githubId, { ttlMin: USER_REPO_ACCESS_TTL_MIN })
+      : await canAccessRepoWithToken(githubAccount.accessToken, owner, repo);
     if (hasGithubAccess) return {
       token: githubAccount.accessToken,
       source: "user" as const,
@@ -66,13 +77,23 @@ const getInstallationToken = cache(async (owner: string, repo: string) => {
     privateKey: process.env.GITHUB_APP_PRIVATE_KEY!,
   });
 
-  const repoInstallation = await app.octokit.request(
-    "GET /repos/{owner}/{repo}/installation",
-    { owner, repo },
-  );
-  if (!repoInstallation) throw new Error(`Installation token not found for "${owner}/${repo}".`);
+  // The installation of a repo rarely changes, we keep its id in memory for a few minutes.
+  const installationKey = `${owner.toLowerCase()}::${repo.toLowerCase()}`;
+  const cachedInstallation = installationIdCache.get(installationKey);
+  let installationId = cachedInstallation && cachedInstallation.expiresAt > Date.now()
+    ? cachedInstallation.id
+    : undefined;
 
-  const installationId = repoInstallation.data.id;
+  if (!installationId) {
+    const repoInstallation = await app.octokit.request(
+      "GET /repos/{owner}/{repo}/installation",
+      { owner, repo },
+    );
+    if (!repoInstallation) throw new Error(`Installation token not found for "${owner}/${repo}".`);
+
+    installationId = repoInstallation.data.id;
+    installationIdCache.set(installationKey, { id: installationId, expiresAt: Date.now() + INSTALLATION_ID_TTL_MS });
+  }
   const tokenData = await db.query.githubInstallationTokenTable.findFirst({
     where: eq(githubInstallationTokenTable.installationId, installationId)
   });
@@ -129,6 +150,10 @@ const getInstallationToken = cache(async (owner: string, repo: string) => {
   installationTokenRefreshInFlight.set(installationId, refreshJob);
   try {
     return await refreshJob;
+  } catch (error) {
+    // The app may have been reinstalled (new installation id)
+    installationIdCache.delete(installationKey);
+    throw error;
   } finally {
     installationTokenRefreshInFlight.delete(installationId);
   }

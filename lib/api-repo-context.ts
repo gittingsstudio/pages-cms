@@ -34,7 +34,7 @@ const resolveRepoAccess = async (user: User, { owner, repo, branch }: RepoRef) =
   });
   if (!config) throw createHttpError(`Configuration not found for ${owner}/${repo}/${branch}.`, 404);
 
-  return { token, config };
+  return { token, config, source };
 };
 
 const requireUser = async () => {
@@ -48,7 +48,8 @@ const requireUser = async () => {
 
 const getRepoReadContext = async (ref: RepoRef): Promise<RepoReadContext> => {
   const user = await requireUser();
-  return { user, ...(await resolveRepoAccess(user, ref)) };
+  const { token, config } = await resolveRepoAccess(user, ref);
+  return { user, token, config };
 };
 
 const REPO_ACCESS_TTL_MS = 60_000;
@@ -57,7 +58,8 @@ const repoAccessCache = new Map<string, { expiresAt: number; value: ReturnType<t
 // Same as getRepoReadContext, but the token, access check and config are kept in memory
 // for a minute (per user and branch). Meant for routes hit in bursts (e.g. images), where
 // resolving them again for each request is most of the work. The session is still
-// checked on every request.
+// checked on every request, and collaborator access (decided by the app rather than
+// GitHub) is never kept.
 const getCachedRepoReadContext = async (ref: RepoRef): Promise<RepoReadContext> => {
   const user = await requireUser();
 
@@ -73,12 +75,17 @@ const getCachedRepoReadContext = async (ref: RepoRef): Promise<RepoReadContext> 
     const value = resolveRepoAccess(user, ref);
     entry = { expiresAt: now + REPO_ACCESS_TTL_MS, value };
     repoAccessCache.set(key, entry);
-    value.catch(() => {
-      if (repoAccessCache.get(key)?.value === value) repoAccessCache.delete(key);
-    });
+    value
+      .then(({ source }) => {
+        if (source !== "user" && repoAccessCache.get(key)?.value === value) repoAccessCache.delete(key);
+      })
+      .catch(() => {
+        if (repoAccessCache.get(key)?.value === value) repoAccessCache.delete(key);
+      });
   }
 
-  return { user, ...(await entry.value) };
+  const { token, config } = await entry.value;
+  return { user, token, config };
 };
 
 export { getRepoReadContext, getCachedRepoReadContext };

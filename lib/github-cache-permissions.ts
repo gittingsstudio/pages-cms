@@ -14,9 +14,10 @@ const checkRepoAccess = async (
   owner: string,
   repo: string,
   githubId: number,
+  options?: { ttlMin?: number },
 ): Promise<boolean> => {
   const now = new Date();
-  const ttl = parseInt(PERMISSIONS_CACHE_TTL_MIN, 10) * 60 * 1000;
+  const ttl = (options?.ttlMin ?? parseInt(PERMISSIONS_CACHE_TTL_MIN, 10)) * 60 * 1000;
 
   const cacheEntry = await db.query.cachePermissionTable.findFirst({
     where: and(
@@ -52,8 +53,11 @@ const checkRepoAccess = async (
     }
 
     return response.status === 200;
-  } catch (error) {
-    console.error("Error checking repo access", error);
+  } catch (error: any) {
+    // 403/404 just mean the token has no access to the repo
+    if (error?.status !== 403 && error?.status !== 404) {
+      console.error("Error checking repo access", error);
+    }
     return false;
   }
 };
