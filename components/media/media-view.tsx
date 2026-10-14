@@ -613,7 +613,7 @@ const MediaView = ({
   const headerNode = useMemo(() => (
     <div className="flex items-center justify-between gap-x-2">
       <div className="min-w-0 truncate overflow-hidden">{breadcrumbNode}</div>
-      <MediaUpload media={mediaConfig.name} path={path} onUpload={handleUpload} extensions={filteredExtensions}>
+      <MediaUpload media={mediaConfig.name} path={path} onUpload={handleUpload} extensions={filteredExtensions} multiple>
         <MediaHeaderActions
           actionNode={mediaActions.length > 0 ? (
             <RepoActionButtons
@@ -755,7 +755,7 @@ const MediaView = ({
 
   if (!usePageHeader) {
     return (
-      <MediaUpload media={mediaConfig.name} path={path} onUpload={handleUpload} extensions={filteredExtensions}>
+      <MediaUpload media={mediaConfig.name} path={path} onUpload={handleUpload} extensions={filteredExtensions} multiple>
         <div className="flex-1 flex flex-col space-y-4">
           <header className="flex items-center gap-x-2 justify-between">
             <div className="sm:flex-1">
@@ -795,7 +795,7 @@ const MediaView = ({
 
   return (
     <div className="flex-1 flex flex-col space-y-4">
-      <MediaUpload media={mediaConfig.name} path={path} onUpload={handleUpload} extensions={filteredExtensions}>
+      <MediaUpload media={mediaConfig.name} path={path} onUpload={handleUpload} extensions={filteredExtensions} multiple>
         {mediaGrid}
       </MediaUpload>
     </div>

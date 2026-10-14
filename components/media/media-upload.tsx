@@ -63,57 +63,99 @@ function MediaUploadRoot({ children, path, onUpload, media, extensions, multiple
       : undefined;
   }, [extensions, configMedia?.extensions]);
 
+  const uploadFile = useCallback(async (file: File) => {
+    const uploadFilename = getUploadFileName(
+      file.name,
+      rename ?? configMedia?.rename,
+    );
+
+    const content = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Content = (reader.result as string).replace(/^(.+,)/, "");
+        resolve(base64Content);
+      };
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+
+    const fullPath = joinPathSegments([path ?? "", uploadFilename]);
+    const response = await fetch(`/api/${config.owner}/${config.repo}/${encodeURIComponent(config.branch)}/files/${encodeURIComponent(fullPath)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "media",
+        name: configMedia.name,
+        content,
+      }),
+    });
+
+    const data = await requireApiSuccess<any>(
+      response,
+      "Failed to upload file",
+    );
+
+    return data.data as FileSaveData;
+  }, [config, path, configMedia?.name, configMedia?.rename, rename]);
+
   const handleFiles = useCallback(async (files: File[]) => {
-    try {
-      for (const file of files) {
-        const uploadFilename = getUploadFileName(
-          file.name,
-          rename ?? configMedia?.rename,
-        );
+    if (files.length === 0) return;
 
-        const uploadPromise = (async () => {
-          const content = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const base64Content = (reader.result as string).replace(/^(.+,)/, "");
-              resolve(base64Content);
-            };
-            reader.onerror = () => reject(new Error("Failed to read file"));
-            reader.readAsDataURL(file);
-          });
-
-          const fullPath = joinPathSegments([path ?? "", uploadFilename]);
-          const response = await fetch(`/api/${config.owner}/${config.repo}/${encodeURIComponent(config.branch)}/files/${encodeURIComponent(fullPath)}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: "media",
-              name: configMedia.name,
-              content,
-            }),
-          });
-
-          const data = await requireApiSuccess<any>(
-            response,
-            "Failed to upload file",
-          );
-
-          return data.data as FileSaveData;
-        })();
-
-        await toast.promise(uploadPromise, {
+    if (files.length === 1) {
+      const [file] = files;
+      try {
+        await toast.promise(uploadFile(file), {
           loading: `Uploading ${file.name}`,
           success: (savedEntry) => {
             onUpload?.(savedEntry);
             return `Uploaded ${file.name}`;
           },
           error: (error: unknown) => error instanceof Error ? error.message : "Upload failed",
+        }).unwrap();
+      } catch (error) {
+        console.error(error);
+      }
+      return;
+    }
+
+    // Files are uploaded one after the other: each upload is a commit, and concurrent
+    // commits to the same branch conflict.
+    const toastId = toast.loading(`Uploading 1 of ${files.length} files`);
+    const failures: { name: string; message: string }[] = [];
+
+    for (const [index, file] of files.entries()) {
+      toast.loading(`Uploading ${index + 1} of ${files.length} files`, {
+        id: toastId,
+        description: file.name,
+      });
+
+      try {
+        const savedEntry = await uploadFile(file);
+        onUpload?.(savedEntry);
+      } catch (error) {
+        console.error(error);
+        failures.push({
+          name: file.name,
+          message: error instanceof Error ? error.message : "Upload failed",
         });
       }
-    } catch (error) {
-      console.error(error);
     }
-  }, [config, path, configMedia?.name, configMedia?.rename, onUpload, rename]);
+
+    const uploadedCount = files.length - failures.length;
+    if (failures.length === 0) {
+      toast.success(`Uploaded ${files.length} files`, { id: toastId, description: undefined });
+    } else {
+      toast.error(
+        uploadedCount > 0
+          ? `Uploaded ${uploadedCount} of ${files.length} files`
+          : `Failed to upload ${files.length} files`,
+        {
+          id: toastId,
+          description: failures.map((failure) => `${failure.name}: ${failure.message}`).join("\n"),
+        },
+      );
+    }
+  }, [onUpload, uploadFile]);
 
   const contextValue = useMemo(() => ({
     handleFiles,
