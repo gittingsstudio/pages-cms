@@ -6,7 +6,7 @@ import { getUploadFileName, joinPathSegments } from "@/lib/utils/file";
 import { toast } from "sonner";
 import { getSchemaByName } from "@/lib/schema";
 import { cn } from "@/lib/utils";
-import { requireApiSuccess } from "@/lib/api-client";
+import { getUploadSizeError, readUploadResponse } from "@/lib/upload";
 import type { FileSaveData } from "@/types/api";
 
 interface MediaUploadContextValue {
@@ -64,6 +64,9 @@ function MediaUploadRoot({ children, path, onUpload, media, extensions, multiple
   }, [extensions, configMedia?.extensions]);
 
   const uploadFile = useCallback(async (file: File) => {
+    const sizeError = getUploadSizeError(file);
+    if (sizeError) throw new Error(sizeError);
+
     const uploadFilename = getUploadFileName(
       file.name,
       rename ?? configMedia?.rename,
@@ -90,10 +93,7 @@ function MediaUploadRoot({ children, path, onUpload, media, extensions, multiple
       }),
     });
 
-    const data = await requireApiSuccess<any>(
-      response,
-      "Failed to upload file",
-    );
+    const data = await readUploadResponse<any>(response, file);
 
     return data.data as FileSaveData;
   }, [config, path, configMedia?.name, configMedia?.rename, rename]);

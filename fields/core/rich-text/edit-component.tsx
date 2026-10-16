@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { useFormContext } from "react-hook-form";
+import { toast } from "sonner";
 import { createPortal } from "react-dom";
 import { Editor, type ImagePickerContext } from "@/components/ui/editor";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,7 @@ import {
   normalizePath,
 } from "@/lib/utils/file";
 import type { ApiResponse, FileSaveData } from "@/types/api";
+import { getUploadSizeError, readUploadResponse } from "@/lib/upload";
 import type { Field } from "@/types/field";
 import "./edit-component.css";
 
@@ -737,6 +739,9 @@ const EditComponent = forwardRef(
           );
         }
 
+        const sizeError = getUploadSizeError(file);
+        if (sizeError) throw new Error(sizeError);
+
         const dataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(String(reader.result ?? ""));
@@ -766,13 +771,7 @@ const EditComponent = forwardRef(
             }),
           },
         );
-        if (!response.ok) {
-          throw new Error(
-            `Failed to upload file: ${response.status} ${response.statusText}`,
-          );
-        }
-
-        const payload = (await response.json()) as ApiResponse<FileSaveData>;
+        const payload = await readUploadResponse<ApiResponse<FileSaveData>>(response, file);
         if (payload.status !== "success") {
           throw new Error(payload.message);
         }
@@ -873,6 +872,7 @@ const EditComponent = forwardRef(
               enableImages={Boolean(mediaConfig)}
               enableImagePasteDrop={Boolean(mediaConfig)}
               onUploadImage={mediaConfig ? handleUploadImage : undefined}
+              onUploadError={(message) => toast.error(message)}
               onRequestImage={mediaConfig ? handleRequestImage : undefined}
               onPendingUploadsChange={setPendingUploads}
               disabled={isReadonly}

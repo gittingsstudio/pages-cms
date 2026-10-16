@@ -11,6 +11,7 @@ import { assertGithubIdentity } from "@/lib/authz-shared";
 import { getToken } from "@/lib/token";
 import { updateFileCache } from "@/lib/github-cache-file";
 import { createHttpError, toErrorResponse } from "@/lib/api-error";
+import { getBase64Size, getUploadSizeError } from "@/lib/upload";
 import { buildCommitTokens, resolveCommitIdentity, resolveCommitMessage } from "@/lib/commit-message";
 import { requireApiUserSession } from "@/lib/session-server";
 
@@ -173,6 +174,12 @@ export async function POST(
             schema.extensions?.length > 0 &&
             !schema.extensions.includes(getFileExtension(normalizedPath))
           ) throw new Error(`Invalid extension "${getFileExtension(normalizedPath)}" for media.`);
+
+          const sizeError = getUploadSizeError({
+            name: getFileName(normalizedPath),
+            size: getBase64Size(data.content ?? ""),
+          });
+          if (sizeError) throw createHttpError(sizeError, 413);
 
           contentBase64 = data.content;
         }

@@ -102,6 +102,7 @@ export type EditorProps = {
   onUploadImage?: ImageUploadHandler;
   imageFallback?: ImageFallbackMode;
   maxImageBytes?: number;
+  onUploadError?: (message: string, file: File) => void;
   onRequestImage?: ImagePickerHandler;
   onPendingUploadsChange?: (count: number) => void;
   className?: string;
@@ -255,6 +256,7 @@ export function Editor({
   onUploadImage,
   imageFallback = "prompt-url",
   maxImageBytes = DEFAULT_MAX_IMAGE_BYTES,
+  onUploadError,
   onRequestImage,
   onPendingUploadsChange,
   className,
@@ -629,6 +631,18 @@ export function Editor({
     return true;
   };
 
+  // Remove the placeholder of an upload that failed (it points to a temporary blob URL that
+  // must not end up in the content) and report the error.
+  const failImageUpload = (uploadId: string, file: File, message: string): void => {
+    const match = findImageNodeByUploadId(uploadId);
+    if (match) {
+      const node = editor.state.doc.nodeAt(match.pos);
+      if (node) editor.view.dispatch(editor.state.tr.delete(match.pos, match.pos + node.nodeSize));
+    }
+    cleanupUpload(uploadId, { revokeBlob: true });
+    onUploadError?.(message, file);
+  };
+
   const cleanupUpload = (uploadId: string, options?: { revokeBlob?: boolean }): void => {
     const shouldRevoke = options?.revokeBlob ?? true;
     const objectUrl = objectUrlByUploadIdRef.current.get(uploadId);
@@ -681,23 +695,21 @@ export function Editor({
       }
 
       if (!resolved?.src) {
-        finalizeImageUpload(uploadId, (attrs) => ({
-          ...attrs,
-          uploading: false,
-          uploadError: "Upload failed",
-        }));
-        cleanupUpload(uploadId, { revokeBlob: false });
+        failImageUpload(uploadId, file, `Failed to upload "${file.name}".`);
         return;
       }
 
       const preloaded = await preloadImageSource(resolved.src);
       if (!preloaded) {
+        // The file was uploaded, we still swap the temporary blob URL for its URL.
         finalizeImageUpload(uploadId, (attrs) => ({
           ...attrs,
+          src: resolved.src,
           uploading: false,
           uploadError: "Image uploaded, but preview failed to load",
+          uploadId: null,
         }));
-        cleanupUpload(uploadId, { revokeBlob: false });
+        cleanupUpload(uploadId, { revokeBlob: true });
         return;
       }
 
@@ -719,12 +731,11 @@ export function Editor({
 
       cleanupUpload(uploadId, { revokeBlob: true });
     } catch (error) {
-      finalizeImageUpload(uploadId, (attrs) => ({
-        ...attrs,
-        uploading: false,
-        uploadError: error instanceof Error ? error.message : "Upload failed",
-      }));
-      cleanupUpload(uploadId, { revokeBlob: false });
+      failImageUpload(
+        uploadId,
+        file,
+        error instanceof Error ? error.message : `Failed to upload "${file.name}".`,
+      );
     }
   };
 
