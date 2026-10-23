@@ -255,6 +255,7 @@ const fetchCollectionDirectoryEntries = async (
   return tree.entries;
 };
 
+// We list folders with the Git trees API: the contents API returns at most 1,000 entries.
 const fetchMediaDirectoryEntries = async (
   owner: string,
   repo: string,
@@ -265,20 +266,29 @@ const fetchMediaDirectoryEntries = async (
   const octokit = createOctokitInstance(token);
 
   try {
-    const response = await octokit.rest.repos.getContent({
+    const response = await octokit.rest.git.getTree({
       owner,
       repo,
-      path: dirPath,
-      ref: branch,
+      tree_sha: dirPath ? `${branch}:${dirPath}` : branch,
     });
 
-    if (!Array.isArray(response.data)) {
-      throw new Error("Expected a directory but found a file.");
+    if (response.data.truncated) {
+      console.warn(`Media folder "${dirPath}" in ${owner}/${repo} has too many entries, the listing is incomplete.`);
     }
 
-    return response.data;
+    return response.data.tree
+      .filter((entry) => entry.type === "blob" || entry.type === "tree")
+      .map((entry) => ({
+        name: entry.path!,
+        path: dirPath ? `${dirPath}/${entry.path}` : entry.path!,
+        type: entry.type === "tree" ? "dir" as const : "file" as const,
+        sha: entry.sha!,
+        size: entry.size ?? null,
+        download_url: null,
+      }));
   } catch (error: any) {
-    if (error?.status === 404 && error?.response?.data?.message === "Not Found") {
+    // The folder doesn't exist (yet), or isn't a folder
+    if (error?.status === 404 || error?.status === 422) {
       return [];
     }
 
