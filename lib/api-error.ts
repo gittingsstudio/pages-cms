@@ -1,14 +1,16 @@
 type ErrorLike = {
   status?: number;
+  code?: string;
   statusCode?: number;
   message?: string;
   headers?: HeadersInit;
 };
 
-const createHttpError = (message: string, status: number, headers?: HeadersInit) => {
-  const error = new Error(message) as Error & { status: number; headers?: HeadersInit };
+const createHttpError = (message: string, status: number, headers?: HeadersInit, code?: string) => {
+  const error = new Error(message) as Error & { status: number; headers?: HeadersInit; code?: string };
   error.status = status;
   error.headers = headers;
+  if (code) error.code = code;
   return error;
 };
 
@@ -57,11 +59,15 @@ const toErrorResponse = (error: unknown) => {
   const headers = error && typeof error === "object"
     ? (error as ErrorLike).headers
     : undefined;
+  const code = error && typeof error === "object" && typeof (error as ErrorLike).code === "string"
+    ? (error as ErrorLike).code
+    : undefined;
 
   return Response.json(
     {
       status: "error",
       message: getErrorMessage(error),
+      ...(code ? { code } : {}),
     },
     { status, headers },
   );

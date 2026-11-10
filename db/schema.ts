@@ -209,6 +209,23 @@ const actionRunTable = pgTable("action_run", {
   idx_action_run_workflowRunId: uniqueIndex("idx_action_run_workflowRunId").on(table.workflowRunId),
 }));
 
+// Who has an entry open right now (heartbeat-based, rows expire after a short window).
+const entryPresenceTable = pgTable("entry_presence", {
+  id: serial("id").primaryKey(),
+  owner: text("owner").notNull(),
+  repo: text("repo").notNull(),
+  branch: text("branch").notNull(),
+  path: text("path").notNull(),
+  userId: text("user_id").notNull(),
+  name: text("name"),
+  image: text("image"),
+  isDirty: boolean("is_dirty").notNull().default(false),
+  lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
+}, table => ({
+  idx_entry_presence_entry_user: uniqueIndex("idx_entry_presence_entry_user").on(table.owner, table.repo, table.branch, table.path, table.userId),
+  idx_entry_presence_lastSeenAt: index("idx_entry_presence_lastSeenAt").on(table.lastSeenAt),
+}));
+
 export {
   userTable,
   sessionTable,
@@ -221,5 +238,6 @@ export {
   cacheFileTable,
   cacheFileMetaTable,
   cachePermissionTable,
-  actionRunTable
+  actionRunTable,
+  entryPresenceTable
 };

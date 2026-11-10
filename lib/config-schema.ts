@@ -237,6 +237,64 @@ const MediaSchema = z.union([
   }),
 ]);
 
+// Live preview of the branch's deployed site (root `preview`)
+const PreviewRootObjectSchema = z
+  .object({
+    url: z
+      .string({ message: "'url' must be a string." })
+      .regex(/^https?:\/\//, {
+        message: "'url' must start with http:// or https://.",
+      })
+      .optional(),
+    branches: z
+      .record(
+        z.string(),
+        z
+          .string({ message: "Branch preview URLs must be strings." })
+          .regex(/^https?:\/\//, {
+            message: "Branch preview URLs must start with http:// or https://.",
+          }),
+        { message: "'branches' must map branch names to URLs." },
+      )
+      .optional(),
+    netlify: z
+      .object(
+        {
+          site: z
+            .string({ required_error: "'site' is required.", invalid_type_error: "'site' must be a string." })
+            .min(1, "'site' is required."),
+        },
+        { message: "'netlify' must be an object with a 'site'." },
+      )
+      .strict()
+      .optional(),
+  })
+  .strict()
+  .refine((value) => Boolean(value.url || value.netlify?.site), {
+    message: "'preview' needs a 'url' or a 'netlify.site'.",
+  });
+
+const PreviewRootSchema = z.union([
+  z.string().regex(/^https?:\/\//, {
+    message: "'preview' must be a URL starting with http:// or https://, or an object.",
+  }),
+  PreviewRootObjectSchema,
+]);
+
+// Per-content preview page path (content `preview`)
+const PreviewContentSchema = z.union([
+  z.literal(false),
+  z.string({ message: "'preview' must be a path, an object, or false." }),
+  z
+    .object(
+      {
+        path: z.string({ message: "'path' must be a string." }).optional(),
+      },
+      { message: "'preview' must be a path, an object, or false." },
+    )
+    .strict(),
+]);
+
 // Schema for list attribute (used in both field and content entries)
 const ListSchema = z.union([
   z.boolean(),
@@ -710,6 +768,7 @@ const ContentLeafSchema = z
       })
       .optional(),
     list: ListSchema.optional(),
+    preview: PreviewContentSchema.optional(),
     commit: z
       .object(
         {
@@ -770,6 +829,7 @@ const ConfigSchema = z
       })
       .optional(),
     media: MediaSchema.optional(),
+    preview: PreviewRootSchema.optional(),
     content: z
       .array(ContentObjectSchema, {
         message:

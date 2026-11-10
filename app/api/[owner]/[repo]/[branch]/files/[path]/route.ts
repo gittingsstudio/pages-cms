@@ -283,6 +283,7 @@ export async function POST(
         size: response?.data.content?.size,
         url: response?.data.content?.download_url,
         config: newConfig ?? undefined,
+        commit: response?.data.commit?.sha,
       }
     });
   } catch (error: any) {
@@ -363,6 +364,8 @@ const githubSaveFile = async (
         throw createHttpError(
           "File has changed since you last loaded it. Please refresh the page and try again.",
           409,
+          undefined,
+          "sha_conflict",
         );
       }
     }

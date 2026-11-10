@@ -43,6 +43,7 @@ export type FileSaveData = {
   size?: number;
   url?: string;
   config?: unknown;
+  commit?: string;
 };
 
 export type MediaItem = {

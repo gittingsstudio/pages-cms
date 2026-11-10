@@ -1,7 +1,21 @@
 type ApiResponseLike = {
   status?: string;
   message?: string;
+  code?: string;
 };
+
+// Error thrown for failed API calls, keeping the HTTP status and any error code.
+class ApiRequestError extends Error {
+  status: number;
+  code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+    this.code = code;
+  }
+}
 
 const parseJsonSafely = async <T = unknown>(response: Response): Promise<T | null> => {
   try {
@@ -19,7 +33,7 @@ const requireApiSuccess = async <T = any>(
 
   if (!response.ok) {
     const message = payload?.message || `${fallbackMessage}: ${response.status} ${response.statusText}`;
-    throw new Error(message);
+    throw new ApiRequestError(message, response.status, payload?.code);
   }
 
   if (payload && typeof payload === "object" && "status" in payload && payload.status !== "success") {
@@ -29,4 +43,4 @@ const requireApiSuccess = async <T = any>(
   return (payload ?? ({} as T)) as T;
 };
 
-export { requireApiSuccess };
+export { requireApiSuccess, ApiRequestError };
